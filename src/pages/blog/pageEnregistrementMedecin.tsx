@@ -34,13 +34,15 @@ const RegisterForm: React.FC = () => {
       const response = await axios.post("/api/apiCreationCompte", form);
       console.log("reponse du srveur:", response.data);
       alert("inscription reussie");
-      //setMessage(response.data.message);
+      setMessage("inscription reussie");
       router.push("/blog/loginForm");
     } catch (error: unknown) {
       if(error instanceof Error)
+        {
       console.log("erreur lors de l'inscription:", error.message);
       //alert(error.response?.data?.error || "Erreur inattendue ou choisir un pseudo qui n'est pas encore utilise")
-      //setMessage(error.response?.data?.message || "Erreur lors de l'inscription.");
+      setMessage( "Erreur lors de l'inscription.");
+    }
       else
     {
       console.log("erreur inconnu");
@@ -75,7 +77,7 @@ const RegisterForm: React.FC = () => {
           required
         />
         <button type="submit" className={styles.button}>
-          S'inscrire
+        <p>S'inscrire</p>
         </button>
       </form>
       {message && <p className={styles.message}>{message}</p>}
