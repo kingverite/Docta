@@ -36,11 +36,17 @@ const RegisterForm: React.FC = () => {
       alert("inscription reussie");
       //setMessage(response.data.message);
       router.push("/blog/loginForm");
-    } catch (error: any) {
-      console.log("erreur lors de l'inscription:", error);
-      alert(error.response?.data?.error || "Erreur inattendue ou choisir un pseudo qui n'est pas encore utilise")
-      setMessage(error.response?.data?.message || "Erreur lors de l'inscription.");
+    } catch (error: unknown) {
+      if(error instanceof Error)
+      console.log("erreur lors de l'inscription:", error.message);
+      //alert(error.response?.data?.error || "Erreur inattendue ou choisir un pseudo qui n'est pas encore utilise")
+      //setMessage(error.response?.data?.message || "Erreur lors de l'inscription.");
+      else
+    {
+      console.log("erreur inconnu");
     }
+    }
+    
   };
 
   return (
