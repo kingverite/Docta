@@ -43,7 +43,8 @@ const Login = () => {
           Login
         </button>
         <a onClick={() => router.push("/register")} className={styles.link}>
-        <p>Don't have an account? Register here</p>
+        <p>{"N\'a t-il pas de compte?"}</p>
+        
         </a>
       </form>
     </div>

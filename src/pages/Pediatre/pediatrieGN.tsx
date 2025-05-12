@@ -171,7 +171,8 @@ const MedicalForm =  () => {
         {step === 6 && (
           <>
                <div className={styles["form-group"]}>
-      <label>Décrivez l'évolution de la maladie :</label>
+      
+      <p>{"Décrivez l\'évolution de la maladie :"}</p>
       <textarea
         name="evolutionMaladie"
         value={form.evolutionMaladie}

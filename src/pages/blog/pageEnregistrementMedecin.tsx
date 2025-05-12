@@ -77,7 +77,7 @@ const RegisterForm: React.FC = () => {
           required
         />
         <button type="submit" className={styles.button}>
-        <p>S'inscrire</p>
+        <p>{"S\'inscrire"}</p>
         </button>
       </form>
       {message && <p className={styles.message}>{message}</p>}
