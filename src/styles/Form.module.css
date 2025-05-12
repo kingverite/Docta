@@ -1,0 +1,1110 @@
+/*///////////////////////////////SCC exporté///////////////////////////////////*/
+
+
+ 
+.container {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+}
+
+.title1 {
+  text-align: center;
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: bold;
+ 
+}
+
+.input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.select {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+  background-color: #fff;
+}
+
+.button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 20px;
+  background-color: #0070f3;
+  color: white;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.button:hover {
+  background-color: #005bb5;
+}
+
+.link {
+  margin-top: 15px;
+  text-align: center;
+  color: #0070f3;
+  cursor: pointer;
+  display: block;
+  text-decoration: none;
+}
+ 
+ /*///////////////////////////////header///////////////////////////////////*/
+  .header {
+    background-color: #aeb6bf; /* Couleur de fond douce */
+    padding: 20px;
+    text-align: center;
+    border-bottom: 2px solid #0070f3; /* Ligne décorative */
+  }
+
+  @media print{
+  
+    .header{
+    display: none;
+  }
+}
+  
+  .logoContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px; /* Espace entre le logo et le titre */
+  }
+  
+  .logo {
+    border-radius: 50%; /* Optionnel : rond pour un effet moderne */
+  }
+  
+  .title2 {
+    font-family: 'Roboto', sans-serif; /* Belle police moderne */
+    font-size: 1rem; /* Taille du texte */
+    color: #FFF; /* Couleur du texte */
+    margin: 0;
+    letter-spacing: 1px; /* Espacement entre les lettres */
+    text-transform: uppercase; /* Tout en majuscules */
+    font-weight: bold;
+  }
+
+
+  /*/////////////////////////////////////bodyLogin////////////////////////////////////////*/
+
+  .page {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /*background-image: url('/imagee/background2.jpg');  L'image doit être dans /public */
+    background-size: cover;
+    background-position: center;
+  }
+  
+  .containerL {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+  }
+  
+  .title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .form {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .input {
+    margin-bottom: 15px;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    outline: none;
+    transition: border-color 0.3s ease;
+  }
+  
+  .input:focus {
+    border-color: #007bff;
+  }
+  
+  .button {
+    padding: 12px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #0ca34b;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  
+  
+  .message {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #d9534f; /* Rouge pour erreurs ou succès */
+  }
+  
+  
+  
+  /*////////////////////////////////boutons///////////////////////////////////////////////////////////*/
+  .buttonMod2 {
+    padding: 5px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #00ffaa;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .buttonMod22 {
+    padding: 2px;
+    font-size: 16px;
+    color: #000000;
+    background-color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .buttonMod {
+    padding: 12px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  .buttonSup {
+    padding: 12px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #fc0932;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .button:hover {
+    background-color: #0056b3;
+  }
+
+   /*///////////////////////////////slidebar///////////////////////////////////*/
+  /* Conteneur principal */
+.container2 {
+    position: relative;
+    height: 100vh;
+    
+    /*background-image: url('/image/bg.png');*/
+    background-size: cover;
+    background-position: center;
+  }
+
+ 
+  
+  /* Toolbar */
+  .toolbar1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+  }
+  .toolbar2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+  }
+  
+  .menuButton {
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+  
+  .menuButton:hover {
+    color: #0070f3;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0;
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -250px; /* Sidebar masquée */
+    width: 250px;
+    height: 100%;
+    background-color: #ffffff;
+    color:#0070f3;
+    padding: 20px;
+    transition: left 0.3s ease;
+    z-index: 1000;
+  }
+  
+  .sidebarOpen {
+    left: 0; /* Sidebar affichée */
+  }
+  
+  .menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .menu li {
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    /*font-weight: bold;*/
+    cursor: pointer;
+  }
+  
+  .menu li:hover {
+    color: #000000;
+    text-decoration: underline;
+  }
+  
+  /* Main Content */
+  .content2 {
+    padding: 20px;
+    color: white;
+  }
+  
+  /* Overlay (fond sombre quand la sidebar est ouverte) */
+  .overlay2 {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999; /* Sous la sidebar */
+  }
+
+
+  /*///////////////////////////////////////////////////////////////////////*/
+  
+  /* Toolbar */
+  
+  
+  .menuButton {
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+  
+  .specialtiesMenu {
+    list-style: none;
+    display: flex;
+    gap: 15px;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .specialtiesMenu li {
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+  }
+  
+  .specialtiesMenu li:hover {
+    text-decoration: underline;
+    color: #0070f3;
+  }
+  
+  /* Sidebar */
+
+
+  /*////////////////////////////////////Enregistrement Etudiant//////////////////////////////////////*/
+
+  .studentCardEt {
+    vertical-align:top;
+    display: inline-block;
+    text-align: justify;
+    width: 200px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 2px solid #007bff;
+    background-color:aqua;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    /*display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;*/
+    /*text-align: center;
+    position: relative;*/
+  }
+  
+  /* Photo de l'étudiant */
+  .studentInfo{
+    vertical-align:top;
+    display: inline-block;
+    text-align: justify;
+    color: blue;
+
+  }
+
+  .studentCardEt img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-right: 20px;
+    border: 2px solid #ddd;
+  }
+  
+  /* Texte de la carte */
+  .studentCardEt h3 {
+    font-size: 18px;
+    color: #007bff;
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+  
+  .studentCardEt p {
+    font-size: 14px;
+    color: #333;
+    margin: 5px 0;
+  }
+  
+  /* Pied de la carte */
+  .studentCardEt.footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+  }
+  
+  .studentCardEt.signature {
+    width: 120px;
+    height: 50px;
+    border-top: 1px solid #000;
+    text-align: center;
+    line-height: 50px;
+    font-size: 14px;
+    color: #555;
+  }
+  
+  .studentCardEt.qr-code {
+    margin-right: 10px;
+    width: 80px;
+    height: 80px;
+  }
+
+  /* Conteneur principal */
+.containerEt {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+  gap: 40px;
+  font-family: 'Arial', sans-serif;
+  /*background-color: #f9f9f9;*/
+  min-height: 100vh;
+}
+
+/* Conteneur du formulaire */
+.formContainerEt {
+  width: 100%;
+  max-width: 450px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  text-align: center;
+}
+
+/* Titre du formulaire */
+.formContainerEt h1 {
+  font-size: 24px;
+  color: #007bff;
+  margin-bottom: 20px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Webcam */
+.webcam {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  border: 2px solid #ddd;
+}
+
+/* Bouton pour capturer la photo */
+.formContainerEt button.capture-button {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 10px 20px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.formContainer button.captureButton:hover {
+  background-color: #218838;
+}
+.captureButton
+{
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 10px 20px;
+  background-color:blue;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+/* Formulaire d'entrée */
+.formEt {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.formEt input,
+.formEt select,
+.formEt button {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  outline: none;
+  transition: border 0.3s ease;
+}
+
+/* Focus sur les champs */
+.formEt input:focus,
+.formEt select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+/* Bouton d'enregistrement */
+.formEt button {
+  background-color: #007bff;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.3s ease;
+}
+
+.formEt button:hover {
+  background-color: #0056b3;
+}
+
+/* Conteneur de la carte temporaire */
+.cardContainerEt {
+  width: 100%;
+  max-width: 500px;
+  background-color:white;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  text-align: center;
+}
+
+/* Texte de la carte temporaire */
+.cardContainerEt h2 {
+  font-size: 22px;
+  color: #007bff;
+  margin-bottom: 20px;
+}
+
+.cardContainerEt p {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.cardContainerEt button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.cardContainerEt button:hover {
+  background-color: #218838;
+}
+.photoEt{
+  width: 80px;
+  height: 80px;
+  margin-right: 10px;
+  
+}
+.divphoto{
+  vertical-align:top;
+  display: inline-block;
+  text-align: justify;
+}
+.qrcodee{
+  vertical-align:top;
+  display: inline-block;
+  text-align: justify;
+}
+.enteteCarte{
+  vertical-align:top;
+  display: inline-block;
+  text-align: justify;
+  margin-bottom: 20px;
+  font-weight: bold;
+  border-bottom: 2px solid blue;
+}
+.photoTitre{
+  vertical-align:top;
+  display: inline-block;
+  text-align: justify;
+}
+.titree{
+  vertical-align:top;
+  display: inline-block;
+  text-align: justify;
+}
+@media print{
+  
+    .header{
+    display: none;
+  }
+
+  .buttonPrint{
+    display: none;
+  }
+}
+
+/*///////////////////////////////////// Page d'acceuil ///////////////////////////////////////////*/
+
+.title3 {
+  font-family: 'Roboto', sans-serif; /* Belle police moderne */
+  font-size: 4rem; /* Taille du texte */
+  color: rgb(255, 102, 0); /* Couleur du texte */
+  margin: 0;
+  letter-spacing: 1px; /* Espacement entre les lettres */
+  text-transform: uppercase; /* Tout en majuscules */
+  font-weight: bold;
+}
+.title4 {
+  font-family: 'Roboto', sans-serif; /* Belle police moderne */
+  font-size: 3rem; /* Taille du texte */
+  color: rgb(147, 147, 216); /* Couleur du texte */
+  margin: 0;
+  letter-spacing: 1px; /* Espacement entre les lettres */
+  text-transform: uppercase; /* Tout en majuscules */
+  font-weight: bold;
+}
+.title5 {
+  font-family: 'Roboto', sans-serif; /* Belle police moderne */
+  font-size: 1.8rem; /* Taille du texte */
+  color: rgb(0, 204, 255); /* Couleur du texte */
+  margin-top: 200px;
+  letter-spacing: 1px; /* Espacement entre les lettres */
+  text-transform: uppercase; /* Tout en majuscules */
+  font-weight: bold;
+}
+.divPrincipal{
+  /*background-color: #000000;*/
+  position: relative;
+    
+    
+    /*background-image: url('/image/bg.png');*/
+    background-size: cover;
+    background-position: center;
+  
+}
+
+.divPrincipal2{
+  background-color: #000000;
+}
+/*//////////////////////////////////////design depense/////////////////////////////////////////////*/
+.listeDepense{
+  padding: 2px;
+  font-size: 20px;
+  background-color: #0e2031;
+  border: none;
+  border-radius: 5px;
+}
+
+/*//////////////////////////////////////rapport///////////////////////////////////////////////////////*/
+.table-container {
+  margin: 2rem auto;
+  max-width: 90%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;  /* Collapsing borders between cells */
+  background-color: #fff;
+  border: 1px solid #ddd;  /* Add border around the whole table */
+}
+
+.table th,
+.table td {
+  border: 1px solid #ddd;  /* Add border to each cell */
+  padding: 12px;
+  text-align: center;
+}
+
+.table thead {
+  background-color: #4caf50;
+  color: white;
+  text-transform: uppercase;
+}
+
+.table thead th {
+  font-size: 14px;
+  border-bottom: 2px solid #388e3c;  /* Thicker border for the header */
+}
+
+.table tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+/* Add different background colors for the Total rows */
+.table .total-payement {
+  background-color: #81c784;  /* Green for Total Payement */
+  color: white;
+}
+
+.table .total-depense {
+  background-color: #ff7043;  /* Orange for Total Depense */
+  color: white;
+}
+
+.table .revenu {
+  background-color: #64b5f6;  /* Blue for Revenu */
+  color: white;
+}
+
+.table tfoot {
+  font-weight: bold;
+}
+
+.table tfoot td {
+  padding: 12px;
+  text-align: center;
+}
+/*///////////////////////////////////////////////////////////////////////////////////////////*/
+
+.container {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+  }
+  
+  .title1 {
+    text-align: center;
+    font-size: 1.8rem;
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    font-weight: bold;
+   
+  }
+  
+  .input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+  }
+  
+  .select {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    background-color: #fff;
+  }
+  
+  .button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 20px;
+    background-color: #0070f3;
+    color: white;
+    font-size: 1.2rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .button:hover {
+    background-color: #005bb5;
+  }
+  
+  .link {
+    margin-top: 15px;
+    text-align: center;
+    color: #0070f3;
+    cursor: pointer;
+    display: block;
+    text-decoration: none;
+  }
+
+  /*///////////////////////////////header///////////////////////////////////*/
+  .header {
+    background-color: #aeb6bf; /* Couleur de fond douce */
+    padding: 20px;
+    text-align: center;
+    border-bottom: 2px solid #0070f3; /* Ligne décorative */
+  }
+  
+  .logoContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px; /* Espace entre le logo et le titre */
+  }
+  
+  .logo {
+    border-radius: 50%; /* Optionnel : rond pour un effet moderne */
+  }
+  
+  .title2 {
+    font-family: 'Roboto', sans-serif; /* Belle police moderne */
+    font-size: 2rem; /* Taille du texte */
+    color: #333; /* Couleur du texte */
+    margin: 0;
+    letter-spacing: 1px; /* Espacement entre les lettres */
+    text-transform: uppercase; /* Tout en majuscules */
+  }
+
+   /*///////////////////////////////slidebar///////////////////////////////////*/
+  /* Conteneur principal */
+.container2 {
+    position: relative;
+    height: 100vh;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .container2::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('/imagee/bg.png') no-repeat center/cover;
+    opacity: 0.9; /* Ajustez l'opacité ici */
+    z-index: -1; /* Place l'image derrière le contenu */
+  }
+  
+  /* Toolbar */
+  .toolbar1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+  }
+  .toolbar2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+  }
+  
+  .menuButton {
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+  
+  .menuButton:hover {
+    color: #0070f3;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0;
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -250px; /* Sidebar masquée */
+    width: 250px;
+    height: 100%;
+    background-color: #ffffff;
+    color:#0070f3;
+    padding: 20px;
+    transition: left 0.3s ease;
+    z-index: 1000;
+  }
+  
+  .sidebarOpen {
+    left: 0; /* Sidebar affichée */
+  }
+  
+  .menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .menu li {
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    /*font-weight: bold;*/
+    cursor: pointer;
+  }
+  
+  .menu li:hover {
+    color: #000000;
+    text-decoration: underline;
+  }
+  
+  /* Main Content */
+  .content2 {
+    padding: 20px;
+    color: white;
+  }
+  
+  /* Overlay (fond sombre quand la sidebar est ouverte) */
+  .overlay2 {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999; /* Sous la sidebar */
+  }
+
+
+  /*///////////////////////////////////////////////////////////////////////*/
+  
+  /* Toolbar */
+  
+  
+  .menuButton {
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+  
+  .specialtiesMenu {
+    list-style: none;
+    display: flex;
+    gap: 15px;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .specialtiesMenu li {
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+  }
+  
+  .specialtiesMenu li:hover {
+    text-decoration: underline;
+    color: #0070f3;
+  }
+  
+  /* ///////////////////////////////////:formulare pediatrie general ///////////////////////////////////////*/
+ 
+  .form-container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .form-group label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  
+  
+  .form-buttons {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .submit-button {
+    background-color: #007bff;
+    color: white;
+  }
+
+  /*/////////////////////////////tableau affichage page Docta//////////////////////////////*/
+  .container2 {
+    padding: 20px;
+  }
+  
+  .title2 {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  .list2 {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .listItem2 {
+    cursor: pointer;
+    color: blue;
+    text-decoration: underline;
+    margin-bottom: 5px;
+  }
+  
+  .listItem2:hover {
+    color: darkblue;
+  }
+  
+  .card2 {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid gray;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    background-color: white;
+  }
+  
+  
+  .cardTitle2 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  .table2 {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white; /* Fond blanc du tableau */
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  
+  /* Bordures visibles pour les cellules */
+  .table2 th, 
+  .table2 td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+  }
+  
+  /* En-tête du tableau en bleu avec texte blanc */
+  .table2 th {
+    background-color: #007bff; /* Bleu */
+    color: white;
+    font-weight: bold;
+  }
+  
+  /* Lignes impaires en gris clair */
+  .table2 tr:nth-child(odd) {
+    background-color: #f2f2f2;
+  }
+  
+  /* Lignes au survol */
+  .table2 tr:hover {
+    background-color: #d1ecf1;
+  }
+  
+  
+  .tableKey2 {
+    font-weight: bold;
+    background-color: #d1ecf1;
+  }
+
+
+
+ 
+  
+  
+  
+
+ 
