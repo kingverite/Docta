@@ -1,7 +1,12 @@
 /*///////////////////////////////SCC exporté///////////////////////////////////*/
 
 
- 
+@media (max-width: 768px) {
+  .specialtiesMenu {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
 .container {
   max-width: 400px;
   margin: 50px auto;
