@@ -1,9 +1,6 @@
 import styles from "@/styles/Form.module.css";
 import Link from "next/link";
 import Image from 'next/image';
-import { useRouter } from "next/router";
-import { useState } from 'react';
-
 
 const specialists = [
   { title: "Diabètologie", image: "/imagee/infectiologue.jpeg", link: "/MedecineI/infectiologue" },
@@ -37,7 +34,7 @@ const SpecialistCards = () => {
             }}>
               {specialist.title}
             </h2>
-            <img 
+            <Image
               src={specialist.image} 
               alt={specialist.title} 
               style={{ 

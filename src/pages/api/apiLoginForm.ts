@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 
 import { userRef } from "../../lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import { NextResponse } from "next/server";
+//import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -45,6 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
   } catch (error) {
     //console.log("Erreur API :", error);
+    console.error("Erreur trouvée", error);
     return res.status(500).json({ error: "Erreur interne du serveur" });
   }
 }

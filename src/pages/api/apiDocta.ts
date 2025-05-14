@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import {collection, getDocs } from "firebase/firestore";
 import { db } from "../../lib/firebase"; // Assurez-vous d'avoir un fichier firebase.ts qui initialise Firebase
 
 
@@ -11,6 +11,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     res.status(200).json(consultations);
   } catch (error) {
+    console.error("Erreur trouvée", error);
     res.status(500).json({ error: "Erreur lors de la récupération des consultations" });
+    
   }
 }

@@ -38,19 +38,17 @@ const LoginForm: React.FC = () => {
       }
 
       //setMessage(response.data.message);
-    } catch (error:unknown) {
-      //console.error("Erreur API :", error); 
-      if ((error as any).response) {
-        const err = error as any;
-        const status = err.response?.status;
-        if (status === 400) alert("Veuillez remplir tous les champs !");
-        else if (status === 500) alert("Compliqueeeeeeeeeeeeeeeee !");
-        else if (status === 401) alert("Mot de passe incorrect !");
-        else if (status === 404) alert("Utilisateur non trouvé !");
-        else alert("Erreur serveur, réessayez plus tard !");
-      } else {
-        alert("Impossible de se connecter !");
-      }
+    } catch (error: unknown) {
+      if(error instanceof Error)
+        {
+      console.log("erreur lors de l'inscription:", error.message);
+      //alert(error.response?.data?.error || "Erreur inattendue ou choisir un pseudo qui n'est pas encore utilise")
+      setMessage( "Erreur lors de l'inscription.");
+    }
+      else
+    {
+      console.log("erreur inconnu");
+    }
     }
   };
 
