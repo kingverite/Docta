@@ -1,12 +1,7 @@
 /*///////////////////////////////SCC exporté///////////////////////////////////*/
 
 
-@media (max-width: 768px) {
-  .specialtiesMenu {
-    flex-direction: column;
-    gap: 10px;
-  }
-}
+
 @media screen and (max-width: 768px) {
   .desktop-only {
     display: none;
