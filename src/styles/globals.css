@@ -13,7 +13,11 @@ body {
   background-repeat: no-repeat;
   background-size: cover;
 }
-
+img{
+  max-width:100%;
+  height: auto;
+  display: block;
+}
 input, textarea, select {
     width: 100%;
     padding: 10px;
