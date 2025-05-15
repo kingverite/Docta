@@ -10,6 +10,15 @@
   .mobile-image {
     width: 100%;
   }
+
+  .specialtiesMenu {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .specialtiesMenu li {
+    display: block;
+    width: 100%;
+  }
 }
 
 .container {
@@ -351,6 +360,7 @@
   .specialtiesMenu {
     list-style: none;
     display: flex;
+    flex-wrap: wrap;
     gap: 15px;
     padding: 0;
     margin: 0;
@@ -361,6 +371,7 @@
     cursor: pointer;
     font-weight: bold;
     color: white;
+    display: inline-block;
   }
   
   .specialtiesMenu li:hover {
