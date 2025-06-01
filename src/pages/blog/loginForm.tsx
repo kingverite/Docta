@@ -22,7 +22,7 @@ const LoginForm: React.FC = () => {
       setMessage("Un lien de connexion a été envoyé à votre adresse e-mail.");
     } catch (error: any) {
       console.error("Erreur lors de l'envoi du lien :", error.message);
-      setMessage("Erreur lors de l'envoi du lien. Veuillez réessayer.");
+      setMessage("Erreur lors de l'envoi du lien. Veuillez réessayer svp.");
     }
   };
 
