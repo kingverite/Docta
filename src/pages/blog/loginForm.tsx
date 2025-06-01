@@ -11,7 +11,8 @@ const LoginForm: React.FC = () => {
     e.preventDefault();
 
     const actionCodeSettings = {
-      url: "http://localhost:3000//blog/finishLogin", // à adapter en production
+      url: "https://docta-git-main-kingverites-projects.vercel.app/blog/finishLogin", 
+      //url: "http://localhost:3000//blog/finishLogin", // à adapter en production
       handleCodeInApp: true,
     };
 
