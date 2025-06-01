@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const formData = req.body;
-    const docRef = await addDoc(collection(db, "consultation"), formData);
+    const docRef = await addDoc(collection(db, "pediatre"), formData);
 
     return res.status(200).json({ message: "Formulaire enregistré", id: docRef.id });
   } catch (error) {

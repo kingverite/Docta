@@ -1,35 +1,36 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import { auth } from "@/lib/firebase"; // adapte le chemin selon ton projet
 import axios from "axios";
+import Cookies from "js-cookie";
 import styles from "@/styles/Form.module.css";
 
 const TOTAL_STEPS = 6;
-const MedicalForm =  () => {
+
+const MedicalForm = () => {
+  const router = useRouter();
+
   const [form, setForm] = useState({
-    name: "",
-    sexe: "",
-    age: "",
-    poids: "",
-    taille: "",
-    temperature: "",
-    frequenceCardiaque: "",
-    saturationOxygene: "",
-    pays: "",
-    ville: "",
-    probleme: "",
-    conseil: "",
-    allergies: "",
-    calendrierVaccinal: "",
-    antecedent1: "",
-    antecedent2: "",
-    evolutionMaladie: "",
-    examensLaboratoire: "",
-    examensImagerie: "",
-    examensInstrumentaux: "",
+    sexe: "", age: "", poids: "", taille: "", temperature: "",
+    frequenceCardiaque: "", saturationOxygene: "", pays: "", ville: "",
+    probleme: "", conseil: "", allergies: "", calendrierVaccinal: "",
+    antecedent1: "", antecedent2: "", evolutionMaladie: "",
+    examensLaboratoire: "", examensImagerie: "", examensInstrumentaux: "",
   });
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  //  Rediriger si l'utilisateur n'est pas connecté
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (!user) {
+        router.push("/blog/loginForm");
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
 
   // Charger depuis localStorage
   useEffect(() => {
@@ -39,7 +40,7 @@ const MedicalForm =  () => {
     if (savedStep) setStep(parseInt(savedStep));
   }, []);
 
-  // Sauvegarde auto
+  // Sauvegarde automatique
   useEffect(() => {
     localStorage.setItem("formData", JSON.stringify(form));
     localStorage.setItem("formStep", step.toString());
@@ -55,15 +56,32 @@ const MedicalForm =  () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      await axios.post("/api/apiPediatrieGN", form);
+      const username = Cookies.get("username");
+      const datetimeId = new Date().toISOString();
+      const email = auth.currentUser?.email || "email inconnu";
+
+      const finalData = {
+        ...form,
+        username: username || "inconnu",
+        email,
+        statut: "NON",
+        specialite: "PediatrieGN",
+        ficheNumero: datetimeId,
+      };
+
+      await axios.post("/api/apiPediatrieGN", finalData);
+
       setSaved(true);
       localStorage.removeItem("formData");
       localStorage.removeItem("formStep");
+
+      //  Redirection après enregistrement
+      router.push("/blog/loginForm");
     } catch (error) {
       console.error("Erreur de sauvegarde", error);
     }
     setLoading(false);
-  };
+  }
 
   return (
     
@@ -72,10 +90,6 @@ const MedicalForm =  () => {
       <form>
         {step === 1 && (
           <>
-            <div className={styles["form-group"]}>
-              <label>Nom et Prénom :</label>
-              <input type="text" name="name" value={form.name} onChange={handleChange} required />
-            </div>
             <div className={styles["form-group"]}>
               <label>Sexe :</label>
               <label><input type="radio" name="sexe" value="Masculin" onChange={handleChange} required /> Masculin</label>

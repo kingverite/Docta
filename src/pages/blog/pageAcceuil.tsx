@@ -29,6 +29,9 @@ export default function Home() {
               <li>
         <Link href="/blog/specialiste">Médecin spécialiste</Link>
       </li>
+        <li>
+        <Link href="/blog/resultats">Résultats</Link>
+      </li>
             </ul>
           </nav>
         </aside>

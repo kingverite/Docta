@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
   try {
     console.log("req recue:", req.body);
-  const { statut, password, pseudo } = req.body;
+  const { statut, password, pseudo, specialite } = req.body;
 
   if ( !statut || !password || !pseudo) {
     console.log("donnees manquante:", req.body);

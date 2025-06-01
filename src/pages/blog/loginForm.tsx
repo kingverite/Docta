@@ -1,82 +1,46 @@
-import styles from "@/styles/Form.module.css";
 import React, { useState } from "react";
-import  Cookies  from "js-cookie";
-import { useRouter } from "next/router";
-import axios from "axios";
-//import type { AxiosError } from "axios";
+import { sendSignInLinkToEmail } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import styles from "@/styles/Form.module.css";
 
 const LoginForm: React.FC = () => {
-  const router=useRouter();
-  const [form, setForm] = useState({
-    pseudo: "",
-    password: "",
-  });
+  const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const actionCodeSettings = {
+      url: "http://localhost:3000//blog/finishLogin", // à adapter en production
+      handleCodeInApp: true,
+    };
+
     try {
-      
-      const response = await axios.post<{username:string; statut:string}>("/api/apiLoginForm", form);
-      console.log("donnees :",response.data);
-      const { username, statut } = response.data;
-      Cookies.set("username", username, { expires: 7, sameSite: "strict" });
-      Cookies.set("statut", statut, { expires: 7, sameSite: "strict" });
-
-      if (statut === "patient") {
-        router.push("/blog/pageAcceuil");
-      } else if (statut === "medecin") {
-        router.push("/blog/Docta");
-      } else {
-        alert("Accès refusé : statut inconnu !");
-      }
-
-      //setMessage(response.data.message);
-    } catch (error: unknown) {
-      if(error instanceof Error)
-        {
-      console.log("erreur lors de l'inscription:", error.message);
-      //alert(error.response?.data?.error || "Erreur inattendue ou choisir un pseudo qui n'est pas encore utilise")
-      setMessage( "Erreur lors de l'inscription.");
-    }
-      else
-    {
-      console.log("erreur inconnu");
-    }
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      window.localStorage.setItem("emailForSignIn", email);
+      setMessage("Un lien de connexion a été envoyé à votre adresse e-mail.");
+    } catch (error: any) {
+      console.error("Erreur lors de l'envoi du lien :", error.message);
+      setMessage("Erreur lors de l'envoi du lien. Veuillez réessayer.");
     }
   };
 
   return (
     <div className={styles.page}>
       <div className={styles.containerL}>
-        <h1 className={styles.title}>Se connecter</h1>
-        <form className={styles.form} onSubmit={handleSubmit}>
+        <h1 className={styles.title}>Connexion par e-mail</h1>
+        <form className={styles.form} onSubmit={handleLogin}>
           <input
-            type="text"
-            name="pseudo"
-            placeholder="Pseudo"
-            value={form.pseudo}
-            onChange={handleChange}
-            className={styles.input}
-            required
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="Mot de passe"
-            value={form.password}
-            onChange={handleChange}
+            type="email"
+            name="email"
+            placeholder="Adresse e-mail"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className={styles.input}
             required
           />
           <button type="submit" className={styles.button}>
-            Connexion
+            Envoyer le lien
           </button>
         </form>
         {message && <p className={styles.message}>{message}</p>}
@@ -84,19 +48,5 @@ const LoginForm: React.FC = () => {
     </div>
   );
 };
-
-
-
-// Ajoutez des effets visuels (hover et focus)
-Object.assign(styles.input, {
-  ':focus': {
-    borderColor: "#007BFF",
-  },
-});
-Object.assign(styles.button, {
-  ':hover': {
-    backgroundColor: "#0056b3",
-  },
-});
 
 export default LoginForm;

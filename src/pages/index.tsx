@@ -1,45 +1,52 @@
+import React, { useState } from "react";
+import { sendSignInLinkToEmail } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import styles from "@/styles/Form.module.css";
-import Link from 'next/link';
-import { useState } from 'react';
 
-export default function Home() {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
-    const toggleSidebar = () => {
-      setIsSidebarOpen(!isSidebarOpen);
+const LoginForm: React.FC = () => {
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const actionCodeSettings = {
+      url: "http://localhost:3000//blog/finishLogin", // à adapter en production
+      handleCodeInApp: true,
     };
-  
-    return (
-      <div className={styles.container2}>
-        {/* Toolbar */}
-        <header className={styles.toolbar1}>
-          <button onClick={toggleSidebar} className={styles.menuButton}>
-            ☰
+
+    try {
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      window.localStorage.setItem("emailForSignIn", email);
+      setMessage("Un lien de connexion a été envoyé à votre adresse e-mail.");
+    } catch (error: any) {
+      console.error("Erreur lors de l'envoi du lien :", error.message);
+      setMessage("Erreur lors de l'envoi du lien. Veuillez réessayer.");
+    }
+  };
+
+  return (
+    <div className={styles.page}>
+      <div className={styles.containerL}>
+        <h1 className={styles.title}>Connexion par e-mail</h1>
+        <form className={styles.form} onSubmit={handleLogin}>
+          <input
+            type="email"
+            name="email"
+            placeholder="Adresse e-mail"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={styles.input}
+            required
+          />
+          <button type="submit" className={styles.button}>
+            Envoyer le lien
           </button>
-          <h1 className={styles.title}></h1>
-        </header>
-  
-        {/* Sidebar */}
-        <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ''}`}>
-          <nav>
-            <ul className={styles.menu}>
-              <li>Réception</li>
-              <li>Urgence</li>
-              <li>Médecin généraliste</li>
-              <li>
-        <Link href="/blog/specialiste">Médecin spécialiste</Link>
-      </li>
-            </ul>
-          </nav>
-        </aside>
-  
-        {/* Main Content */}
-        <main className={styles.content2}>
-          {/* Ajoutez ici le contenu principal */}
-        </main>
-  
-        {/* Overlay (quand la sidebar est ouverte) */}
-        {isSidebarOpen && <div className={styles.overlay2} onClick={toggleSidebar}></div>}
+        </form>
+        {message && <p className={styles.message}>{message}</p>}
       </div>
-    );
-  }
+    </div>
+  );
+};
+
+export default LoginForm;

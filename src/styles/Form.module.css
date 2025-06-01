@@ -1049,6 +1049,7 @@
     font-size: 24px;
     font-weight: bold;
     margin-bottom: 10px;
+    color: #000;
   }
   
   .list2 {
@@ -1058,7 +1059,7 @@
   
   .listItem2 {
     cursor: pointer;
-    color: blue;
+    color: #007bff;
     text-decoration: underline;
     margin-bottom: 5px;
   }
@@ -1121,6 +1122,16 @@
   .tableKey2 {
     font-weight: bold;
     background-color: #d1ecf1;
+  }
+  .blackBox {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #d1ecf1;
+    padding: 2rem;
+    border-radius: 8px;
+    color: rgb(255, 255, 255);
   }
 
 
