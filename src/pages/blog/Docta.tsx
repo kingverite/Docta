@@ -273,6 +273,7 @@ export default function ConsultationsList() {
                       <td>{index + 1}</td>
                       <td>{entry.date}</td>
                       <td>{entry.reponse}</td>
+                      <td>{entry.ordonnance}</td>
                       <td>
                         {entry.ordonnance ? (
                           <a
