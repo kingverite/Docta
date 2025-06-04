@@ -10,10 +10,14 @@ const LoginForm: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const actionCodeSettings = {
-      url: "http://localhost:3000//blog/finishLogin", // à adapter en production
-      handleCodeInApp: true,
-    };
+    const isLocalhost = typeof window !== "undefined" && window.location.hostname === "localhost";
+
+const actionCodeSettings = {
+  url: isLocalhost
+    ? "http://localhost:3000/blog/finishLogin"
+    : "https://docta-rust.vercel.app/blog/finishLogin",
+  handleCodeInApp: true,
+};
 
     try {
       await sendSignInLinkToEmail(auth, email, actionCodeSettings);
