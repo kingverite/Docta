@@ -31,6 +31,25 @@ interface Consultation {
   ville: string;
 }
 
+const fieldLabels: Record<string, string> = {
+  poids: "Poids",
+  taille: "Taille",
+  temperature: "Température",
+  examensLaboratoire: "Examens Laboratoire",
+  saturationOxygene: "Saturation en oxygène",
+  frequenceCardiaque: "Frequence cardiaque",
+  examensInstrumentaux: "Examens instrumentaux",
+  examensImagerie: "Examens imagerie",
+  evolutionMaladie: "Evolution de la maladie",
+  calendrierVaccinal: "calendrier Vaccinal",
+  antecedent1: "antécédant famille restreinte",
+  antecedent2: "antécédant famille elargie",
+  specialite: "specialité",
+  probleme: "problème",
+  age: "âge ",
+  
+};
+
 interface Suivi {
   date: string;
   resultat1: string;
@@ -52,6 +71,8 @@ export default function ConsultationsList() {
   const [ordonnance, setOrdonnance] = useState<string>("");
   const [historique, setHistorique] = useState<Reponse[]>([]);
   const [rechercheFicheNumero, setRechercheFicheNumero] = useState<string>("");
+   const [imageUrl, setImageUrl] = useState<string | null>(null);
+const [isModalOpen, setIsModalOpen] = useState(false);
 
   const statut = Cookies.get("statut");
 
@@ -217,19 +238,19 @@ export default function ConsultationsList() {
           <table className={styles.table2}>
             <thead>
               <tr>
-                <th>Champ</th>
-                <th>Valeur</th>
+                <th>Observations </th>
+                <th>Données</th>
               </tr>
             </thead>
             <tbody>
               {Object.entries(selectedConsultation).map(([key, value]) =>
-                key !== "id" && key !== "name" ? (
-                  <tr key={key}>
-                    <td>{key}</td>
-                    <td>{String(value)}</td>
-                  </tr>
-                ) : null
-              )}
+  !["id", "username", "ficheNumero", "statutCollection", "statut", "historique", "email"].includes(key) ? (
+    <tr key={key}>
+      <td>{fieldLabels[key] || key}</td>
+      <td>{String(value)}</td>
+    </tr>
+  ) : null
+)}
             </tbody>
           </table>
 
@@ -293,16 +314,25 @@ export default function ConsultationsList() {
                             <thead>
                               <tr>
                                 <th>Date</th>
-                                <th>Résultat 1</th>
-                                <th>Résultat 2</th>
+                                <th>Résultat</th>
+                                
                               </tr>
                             </thead>
                             <tbody>
                               {entry.suivi.map((suiviItem, i) => (
                                 <tr key={i}>
                                   <td>{suiviItem.date}</td>
-                                  <td>{suiviItem.resultat1}</td>
-                                  <td>{suiviItem.resultat2}</td>
+                                  <td
+  style={{ cursor: "pointer", color: "blue", textDecoration: "underline" }}
+  onClick={() => {
+    if (suiviItem.resultat2) {
+      setImageUrl(suiviItem.resultat2);
+      setIsModalOpen(true);
+    }
+  }}
+>
+  {suiviItem.resultat1}
+</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -326,6 +356,36 @@ export default function ConsultationsList() {
               </table>
             )}
           </div>
+          {isModalOpen && imageUrl && (
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      backgroundColor: "rgba(0,0,0,0.7)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 1000,
+    }}
+    onClick={() => setIsModalOpen(false)} // Ferme le modal si on clique en dehors
+  >
+    <img
+      src={imageUrl}
+      alt="Ordonnance"
+      style={{
+        maxWidth: "90%",
+        maxHeight: "90%",
+        borderRadius: "10px",
+        boxShadow: "0 0 10px #fff",
+        backgroundColor: "#fff",
+      }}
+      onClick={(e) => e.stopPropagation()} // Empêche de fermer en cliquant sur l'image
+    />
+  </div>
+)}
         </div>
       )}
     </div>
