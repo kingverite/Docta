@@ -4,8 +4,9 @@ import Link from "next/link";
 
 const specialists = [
   { title: "Pediatrie générale", image: "/imagee/pediatrieGN.png", link: "/Pediatre/pediatrieGN" },
-  { title: "Néonatologie", image: "/imagee/neuropediatre.jpg", link: "/Pediatre/neuropediatre" },
-  { title: "Conseil Nutritionel", image: "/imagee/cardiopediatre.jpg", link: "/Pediatre/cardiopediatre" },
+  { title: "Néonatologie", image: "/imagee/neonatologie.jpg", link: "/Pediatre/neonatologie" },
+  { title: "Cardiopediatre", image: "/imagee/cardiopediatre.jpeg", link: "/Pediatre/cardiopediatre" },
+  { title: "Neuropediatre", image: "/imagee/neurologie-pediatrique.jpg", link: "/Pediatre/neuropediatre" },
   
 ];
 

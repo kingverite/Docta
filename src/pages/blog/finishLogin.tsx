@@ -33,13 +33,25 @@ const FinishLogin = () => {
           const userData = docSnap.data();
           const statut = userData.statut || "patient";
           const username = userData.username || "";
+          const email2 = email;
 
+          Cookies.set("email", email2, { expires: 7 });
           Cookies.set("username", username, { expires: 7 });
           Cookies.set("statut", statut, { expires: 7 });
 
           if (statut === "patient") {
             router.push("/blog/pageAcceuil");
-          } else {
+          } 
+          
+           else if (statut === "pediatre") {
+            router.push("/blog/consPediatre");
+          }
+
+           else if (statut === "generaliste") {
+            router.push("/blog/consGeneral");
+          }
+
+          else {
             router.push("/blog/Docta");
           }
         } else {
@@ -76,7 +88,7 @@ const FinishLogin = () => {
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h2>Connexion en cours...</h2>
+      <h2>Connexion en coursSSS...</h2>
       <p>{message}</p>
     </div>
   );

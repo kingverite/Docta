@@ -24,8 +24,8 @@ export default function Home() {
           <nav>
             <ul className={styles.menu}>
               <li>Réception</li>
-              <li>Urgence</li>
-              <li>Médecin généraliste</li>
+              <li><Link href="/general/urgence">Urgence</Link></li>
+              <li><Link href="/general/general">Médecin généraliste</Link></li>
               <li>
         <Link href="/blog/specialiste">Médecin spécialiste</Link>
       </li>

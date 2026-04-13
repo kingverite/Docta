@@ -24,9 +24,10 @@ export default function Specialiste() {
         <h1 className={styles.title}></h1>
         <nav>
           <ul className={styles.specialtiesMenu}>
-          <li><Link href="/Gynecologue/trimestre1">Premier trimestre</Link></li>
-          <li><Link href="/Gynecologue/trimestre2">Deuxième trimestre </Link></li>
-          <li><Link href="/Gynecologue/trimestre3">Troisième trimestre </Link></li>
+          <li><Link href="/general/general2">ConsultationGénérale</Link></li>
+          <li><Link href="/general/urgence2">Urgence</Link></li>
+            
+
           </ul>
         </nav>
       </header>
@@ -35,12 +36,9 @@ export default function Specialiste() {
       <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ''}`}>
         <nav>
           <ul className={styles.menu}>
-          <li><Link href="/general/urgence">Urgence</Link></li>
-              <li><Link href="/general/general">Médecin généraliste</Link></li>
-              <li>
-        <Link href="/blog/resultats">Résultats</Link>
-      </li>
-          
+          <li><Link href="/general/general2">Consultation générale</Link></li>
+
+          <li><Link href="/general/urgence2">Urgence</Link></li>
           </ul>
         </nav>
       </aside>

@@ -24,18 +24,12 @@ export default function Specialiste() {
         <h1 className={styles.title}></h1>
         <nav>
           <ul className={styles.specialtiesMenu}>
-          <li><Link href="/blog/MedecineInterne">Medecine Interne</Link></li>
-          <li><Link href="/blog/Pediatre">Pédiatrie</Link></li>
-            <li><Link href="/blog/Gynecologue">Gynécologie et obstétrique</Link></li>
-            <li><Link href="/blog/Dermologue">Dermologie</Link></li>
+          <li><Link href="/Pediatre/pediatrieGN2">Pediatrie générale</Link></li>
+          <li><Link href="/Pediatre/neonatologie2">Néonatologie</Link></li>
+            <li><Link href="/Pediatre/cardiopediatre2">Cardiopediatre</Link></li>
+            <li><Link href="/Pediatre/neuropediatre2">Neuropediatre</Link></li>
 
-           {/* <li><Link href="/blog/Neurochirurgien">Churirgie</Link></li>
-            <li><Link href="/blog/Vaccin">Autres</Link></li>
-           <li><Link href="/blog/Ophtalmologue">Ophtalmologie</Link></li>
-            <li><Link href="/blog/ORL">ORL</Link></li>
-            <li><Link href="/blog/Psychiatre">Psychiatrie</Link></li>
-            <li><Link href="/blog/Neurologue">Neurologie</Link></li>
-            <li><Link href="/blog/Vaccin">Vaccinologie</Link></li>*/}
+          
             
             
           </ul>
@@ -46,20 +40,17 @@ export default function Specialiste() {
       <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ''}`}>
         <nav>
           <ul className={styles.menu}>
-          <li>
-        <Link href="/blog/pageAcceuil">Acceuil</Link>
-      </li>
-            <li>Réception</li>
-            <li><Link href="/general/general">Médecin généraliste</Link></li>
-            <li><Link href="/general/urgence">Urgence</Link></li>
+          <li><Link href="/Pediatre/pediatrieGN2">Pediatrie générale</Link></li>
+          <li><Link href="/Pediatre/neonatologie2">Néonatologie</Link></li>
+            <li><Link href="/Pediatre/cardiopediatre2">Cardiopediatre</Link></li>
+            <li><Link href="/Pediatre/neuropediatre2">Neuropediatre</Link></li>
           </ul>
         </nav>
       </aside>
 
       {/* Main Content */}
       <main className={styles.content2}>
-        <h2>Médecins Spécialistes</h2>
-        <p>Bienvenue sur la page des spécialités médicales. Cliquez sur une spécialité pour en savoir plus.</p>
+        
       </main>
 
       {/* Overlay */}

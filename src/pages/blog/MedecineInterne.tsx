@@ -3,11 +3,12 @@ import Link from "next/link";
 import Image from 'next/image';
 
 const specialists = [
-  { title: "Diabètologie", image: "/imagee/infectiologue.jpeg", link: "/MedecineI/infectiologue" },
+  { title: "Infectologie", image: "/imagee/infectiologue.jpeg", link: "/MedecineI/infectiologue" },
   { title: "Pneumologie", image: "/imagee/pneumologue.jpeg", link: "/MedecineI/pneumologue" },
   { title: "Cardiologie", image: "/imagee/cardiologue.jpeg", link: "/MedecineI/cardiologue" },
   { title: "Gastro-enterologie", image: "/imagee/gastroEnterologue.jpeg", link: "/MedecineI/gastroEnterologue" },
   { title: "Nephologie", image: "/imagee/nephologue.jpeg", link: "/MedecineI/nephologue" },
+  { title: "Autres", image: "/imagee/autres.jpg", link: "/MedecineI/autreMI" },
   
 ];
 
@@ -37,11 +38,13 @@ const SpecialistCards = () => {
             <Image
               src={specialist.image} 
               alt={specialist.title} 
-              style={{ 
-                width: "100%", 
-                height: "150px", 
-                objectFit: "cover" 
-              }} 
+              width={300} // largeur souhaitée
+  height={200} // hauteur souhaitée
+  style={{
+    objectFit: "cover",
+    width: "100%", // pour qu'il s'adapte au parent
+    height: "150px",
+  }}
             />
           </div>
         </Link>

@@ -74,11 +74,12 @@ export default function ConsultationsList() {
    const [imageUrl, setImageUrl] = useState<string | null>(null);
 const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const statut = "Pediatrie generale";
+  const statut = "consultation";
+  const statut2 = "pediatrie generale";
 
   // Fonction pour récupérer les consultations filtrées côté backend par ficheNumero
   const fetchConsultations = async () => {
-    if (!rechercheFicheNumero || !statut) {
+    if (!rechercheFicheNumero || !statut || !statut2) {
       alert("Veuillez entrer le ficheNumero et le statut");
       return;
     }
@@ -106,7 +107,7 @@ const [isModalOpen, setIsModalOpen] = useState(false);
       return;
     }
 
-    axios.get<Consultation[]>("/api/apiDocta", { params: { statut } })
+    axios.get<Consultation[]>("/api/apiAffichage", { params: { statut2 } })
       .then(response => setConsultations(response.data))
       .catch(error => console.error("Erreur lors de la récupération des consultations", error));
   }, [statut]);

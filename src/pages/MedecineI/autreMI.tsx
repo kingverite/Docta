@@ -66,7 +66,7 @@ const MedicalForm = () => {
         username: username || "inconnu",
         email,
         statut: "NON",
-        specialite: "cardiologie",
+        specialite: "autre",
         ficheNumero: datetimeId,
       };
 

@@ -5,17 +5,20 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import styles from "@/styles/Form.module.css";
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 5;
 
 const MedicalForm = () => {
   const router = useRouter();
 
   const [form, setForm] = useState({
     sexe: "", age: "", poids: "", taille: "", temperature: "",
-    frequenceCardiaque: "", saturationOxygene: "", pays: "", ville: "",
+    parlerTeste: "", parlerEco: "", pays: "", ville: "",
     probleme: "", conseil: "", allergies: "", calendrierVaccinal: "",
-    antecedent1: "", antecedent2: "", evolutionMaladie: "",
-    examensLaboratoire: "", examensImagerie: "", examensInstrumentaux: "",
+    antecedent1: "", antecedent2: "", evolutionMaladie: "",PressionArterielle : "",
+    examensLaboratoire: "", examensImagerie: "", examensInstrumentaux: "",tuberculose: "",
+    diabete: "",hypertension: "",asthme: "",profession: "",fumer: "",alchool: "",interventionChirurgicale: "",
+    dateregles: "", parlerVentre: "", parlerNause: "", parlerSaignema: "",saignementVagin: "",ExpliGrossesseNE: "",
+    dateregle: "", precisionRisque: "", detailMaladie: "",autreMaladie2: ""
   });
 
   const [step, setStep] = useState(1);
@@ -59,17 +62,19 @@ const MedicalForm = () => {
       const username = Cookies.get("username");
       const datetimeId = new Date().toISOString();
       const email = auth.currentUser?.email || "email inconnu";
+      const trimeestre="Premier";
 
       const finalData = {
         ...form,
         username: username || "inconnu",
         email,
+        trimeestre,
         statut: "NON",
-        specialite: "Pediatrie generale",
+        
         ficheNumero: datetimeId,
       };
 
-      await axios.post("/api/apiConsultation", finalData);
+      await axios.post("/api/apiConsultationCPN", finalData);
 
       setSaved(true);
       localStorage.removeItem("formData");
@@ -90,11 +95,7 @@ const MedicalForm = () => {
       <form>
         {step === 1 && (
           <>
-            <div className={styles["form-group"]}>
-              <label>Sexe :</label>
-              <label><input type="radio" name="sexe" value="Masculin" onChange={handleChange} required /> Masculin</label>
-              <label><input type="radio" name="sexe" value="Féminin" onChange={handleChange} required /> Féminin</label>
-            </div>
+           
             <div className={styles["form-group"]}>
               <label>Âge :</label>
               <input type="number" name="age" value={form.age} onChange={handleChange} required />
@@ -103,14 +104,7 @@ const MedicalForm = () => {
               <label>Poids(Kg) :</label>
               <input type="number" name="poids" value={form.poids} onChange={handleChange} required />
             </div>
-            
-            
-          </>
-        )}
-
-        {step === 2 && (
-          <>
-          <div className={styles["form-group"]}>
+            <div className={styles["form-group"]}>
               <label>Taille(Cm) :</label>
               <input type="number" name="taille" value={form.taille} onChange={handleChange} required />
             </div>
@@ -118,21 +112,13 @@ const MedicalForm = () => {
               <label>Temperature(°C) :</label>
               <input type="number" name="temperature" value={form.temperature} onChange={handleChange} required />
             </div>
-            <div className={styles["form-group"]}>
-              <label>Fréquence cardiaque(BPM) :</label>
-              <input type="number" name="frequenceCardiaque" value={form.frequenceCardiaque} placeholder="Facultatif" onChange={handleChange} required />
-            </div>
-            <div className={styles["form-group"]}>
-              <label>Saturation en oxygène(%) :</label>
-              <input type="number" name="saturationOxygene" value={form.saturationOxygene} placeholder="Facultatif" onChange={handleChange} required />
-            </div>
+            
           </>
         )}
 
-{step === 3 && (
+        {step === 2 && (
           <>
-          
-            <div className={styles["form-group"]}>
+         <div className={styles["form-group"]}>
               <label>Pays :</label>
               <input type="text" name="pays" value={form.pays} onChange={handleChange} required />
             </div>
@@ -140,85 +126,94 @@ const MedicalForm = () => {
               <label>Ville :</label>
               <input type="text" name="ville" value={form.ville} onChange={handleChange} required />
             </div>
+            <div className={styles["form-group"]}>
+              <label>Profession :</label>
+              <input type="text" name="profession" value={form.profession} onChange={handleChange} required />
+            </div>
+           
+          </>
+        )}
+
+{step === 3 && (
+          <>
+
+             <div className={styles["form-group"]}>
+              <label>Aviez-vous consulté pour  confirmation de la grossesse ?</label>
+              <label><input type="radio" name="teste" value="Oui" onChange={handleChange} required /> Oui</label>
+              <label><input type="radio" name="teste" value="Non" onChange={handleChange} required /> Non</label>
+            </div>
+
+          <div className={styles["form-group"]}>
+              <label>Pouvez-vous nous donner la date, mois, l’année de dernière règle ?</label>
+              <input type="date" name="dateregle" value={form.dateregle} onChange={handleChange} required />
+            </div>
+
+            <div className={styles["form-group"]}>
+              <label>Aviez-vous l’âge de moins de 18 ans ou de 35 ans et plus?</label>
+              <label><input type="radio" name="grossesseRisque" value="Oui" onChange={handleChange} required /> Oui</label>
+              <label><input type="radio" name="grossesseRisque" value="Non" onChange={handleChange} required /> Non</label>
+            </div>
+
+            <div className={styles["form-group"]}>
+              <label>Si oui veuillez le preciser</label>
+              <input type="text" name="precisionRisque" value={form.precisionRisque}  onChange={handleChange} required />
+            </div>
+ 
+            
+           
+         
           </>
         )}
 
         {step === 4 && (
           <>
-            <div className={styles["form-group"]}>
-              <label>Dictez-nous quels sont les problèmes auxquels vous voulais avoir conseil ?  :</label>
-              <textarea name="probleme" value={form.probleme} onChange={handleChange} required />
+          
+          
+          
+             <div className={styles["form-group"]}>
+              <label>Avez-vous faites l’échographie pour confirmer la grossesse ?</label>
+              <label><input type="radio" name="ecographie" value="Oui" onChange={handleChange} required /> Oui</label>
+              <label><input type="radio" name="ecographie" value="Non" onChange={handleChange} required /> Non</label>
             </div>
             <div className={styles["form-group"]}>
-              <label>Avez-vous déjà consulté votre médecin conseil ?  :</label>
-              <label><input type="radio" name="conseil" value="Oui" onChange={handleChange} required /> Oui</label>
-              <label><input type="radio" name="conseil" value="Non" onChange={handleChange} required /> Non</label>
+              <label>Si oui veuillez nous en parler :</label>
+              <input type="text" name="parlerEco" value={form.parlerEco}  onChange={handleChange} required />
+            </div>
+
+            <div className={styles["form-group"]}>
+              <label>Avez-vous une hypertension artérielle préexistante avant la grossesse, le diabète, le VIH ou autre maladie ? </label>
+              <label><input type="radio" name="maladiePrexistante" value="Oui" onChange={handleChange} required /> Oui</label>
+              <label><input type="radio" name="maladiePrexistante" value="Non" onChange={handleChange} required /> Non</label>
             </div>
             <div className={styles["form-group"]}>
-              <label>Si vous aviez eu des maladies suivantes dans les passées, quels sont les médicaments, aliments et autres auxquels vous avez des allergiques ?  </label>
-              <textarea name="allergies" value={form.allergies} onChange={handleChange} required />
+              <label>Si Oui veuillez nous donner les détailles :</label>
+              <input type="text" name="detailMaladie" value={form.detailMaladie}  onChange={handleChange} required />
             </div>
+
+
+            
+           
           </>
         )}
 
-        {step === 5 && (
+
+         {step === 5 && (
           <>
-            <div className={styles["form-group"]}>
-              <label>Votre calendrier vaccinal est-il à jour ?</label>
-              <label><input type="radio" name="calendrierVaccinal" value="Oui" onChange={handleChange} required /> Oui</label>
-              <label><input type="radio" name="calendrierVaccinal" value="Non" onChange={handleChange} required /> Non</label>
+          
+          
+<div className={styles["form-group"]}>
+              <label>Avez-vous d’autres maladies  qui ont été dépistées au cours de votre consultation à l’hôpital ? </label>
+              <label><input type="radio" name="autreMaladie" value="Oui" onChange={handleChange} required /> Oui</label>
+              <label><input type="radio" name="autreMaladie" value="Non" onChange={handleChange} required /> Non</label>
             </div>
+
             <div className={styles["form-group"]}>
-              <label>Y a-t-il des cas de maladie similaires dans votre famille restreinte?</label>
-              <label><input type="radio" name="antecedent1" value="Oui" onChange={handleChange} required /> Oui</label>
-              <label><input type="radio" name="antecedent1" value="Non" onChange={handleChange} required /> Non</label>
-            </div>
-            <div className={styles["form-group"]}>
-              <label>Y a-t-il des cas de maladie similaires dans votre famille élargie ??</label>
-              <label><input type="radio" name="antecedent2" value="Oui" onChange={handleChange} required /> Oui</label>
-              <label><input type="radio" name="antecedent2" value="Non" onChange={handleChange} required /> Non</label>
+              <label>Si oui veuillez le préciser :</label>
+              <input type="text" name="autreMaladie2" value={form.autreMaladie2}  onChange={handleChange} required />
             </div>
             
+           
           </>
-        )}
-
-        {step === 6 && (
-          <>
-               <div className={styles["form-group"]}>
-      
-      <p>{"Décrivez l\'évolution de la maladie :"}</p>
-      <textarea
-        name="evolutionMaladie"
-        value={form.evolutionMaladie}
-        onChange={handleChange}
-        placeholder="Expliquez comment la maladie a évolué et depuis combien de temps vous êtes malade."
-        required
-      />
-    </div>
-
-    <div className={styles["form-group"]}>
-      <label>Examens médicaux passés :</label>
-      <textarea
-        name="examensLaboratoire"
-        value={form.examensLaboratoire}
-        onChange={handleChange}
-        placeholder="Indiquez les examens de laboratoire effectués (prise de sang, analyses, etc.)."
-      />
-      <textarea
-        name="examensImagerie"
-        value={form.examensImagerie}
-        onChange={handleChange}
-        placeholder="Indiquez les examens d'imagerie médicale réalisés (radiographie, scanner, IRM, etc.)."
-      />
-      <textarea
-        name="examensInstrumentaux"
-        value={form.examensInstrumentaux}
-        onChange={handleChange}
-        placeholder="Indiquez les explorations instrumentales effectuées (ECG, endoscopie, etc.)."
-      />
-    </div>
-  </>
-
         )}
 
         <div className={styles["form-buttons"]}>

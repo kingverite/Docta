@@ -21,7 +21,7 @@ const LoginForm: React.FC = () => {
 const actionCodeSettings = {
   url: isLocalhost
     ? "http://localhost:3000/blog/finishLogin"
-    : "https://docta-rust.vercel.app/blog/finishLogin",
+    : "https://medicalcouncilonline.expert/blog/finishLogin",
   handleCodeInApp: true,
 };
 
