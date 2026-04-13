@@ -88,7 +88,7 @@ const FinishLogin = () => {
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h2>Connexion en coursSSS...</h2>
+      <h2>Connexion en cours...</h2>
       <p>{message}</p>
     </div>
   );
