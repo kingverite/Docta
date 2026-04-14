@@ -26,6 +26,7 @@ const actionCodeSettings = {
     } catch (error: any) {
       console.error("Erreur lors de l'envoi du lien :", error.message);
       setMessage("Erreur lors de l'envoi du lien. Veuillez réessayer.");
+      setMessage("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.");
     }
   };
 
