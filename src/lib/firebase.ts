@@ -67,3 +67,9 @@ export const provider = new GoogleAuthProvider();
 
 // ✅ Exports
 export { db, storage, userRef };
+
+
+
+// ✅ compatibilité avec ton ancien code
+export const auth =
+  typeof window !== "undefined" ? getAuth() : ({} as any);
