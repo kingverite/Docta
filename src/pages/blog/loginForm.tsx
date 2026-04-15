@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { sendSignInLinkToEmail } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { getClientAuth } from "@/lib/firebase"; // ✅ corrigé
 import styles from "@/styles/Form.module.css";
 
 const LoginForm: React.FC = () => {
@@ -10,28 +10,28 @@ const LoginForm: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    /*const actionCodeSettings = {
-      //url: "https://docta-git-main-kingverites-projects.vercel.app/blog/finishLogin", 
-      url: "http://localhost:3000//blog/finishLogin", // à adapter en production
-      handleCodeInApp: true,
-    };*/
-
-    const isLocalhost = typeof window !== "undefined" && window.location.hostname === "localhost";
-
-const actionCodeSettings = {
-  url: isLocalhost
-    ? "http://localhost:3000/blog/finishLogin"
-    : "https://medicalcouncilonline.expert/blog/finishLogin",
-  handleCodeInApp: true,
-};
-
     try {
+      const auth = getClientAuth(); // ✅ récupération sécurisée
+
+      const isLocalhost =
+        typeof window !== "undefined" &&
+        window.location.hostname === "localhost";
+
+      const actionCodeSettings = {
+        url: isLocalhost
+          ? "http://localhost:3000/blog/finishLogin"
+          : "https://medicalcouncilonline.expert/blog/finishLogin",
+        handleCodeInApp: true,
+      };
+
       await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+
       window.localStorage.setItem("emailForSignIn", email);
+
       setMessage("Un lien de connexion a été envoyé à votre adresse e-mail.");
     } catch (error: any) {
       console.error("Erreur lors de l'envoi du lien :", error.message);
-      setMessage("Erreur lors de l'envoi du lien. Veuillez réessayer svp.");
+      setMessage("Erreur lors de l'envoi du lien. Veuillez réessayer.");
     }
   };
 
@@ -39,6 +39,7 @@ const actionCodeSettings = {
     <div className={styles.page}>
       <div className={styles.containerL}>
         <h1 className={styles.title}>Connexion par e-mail</h1>
+
         <form className={styles.form} onSubmit={handleLogin}>
           <input
             type="email"
@@ -49,10 +50,12 @@ const actionCodeSettings = {
             className={styles.input}
             required
           />
+
           <button type="submit" className={styles.button}>
             Envoyer le lien
           </button>
         </form>
+
         {message && <p className={styles.message}>{message}</p>}
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { auth } from "@/lib/firebase";
+import { getClientAuth } from "@/lib/firebase";
 import { isSignInWithEmailLink, signInWithEmailLink } from "firebase/auth";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import Cookies from "js-cookie";
@@ -15,6 +15,9 @@ const FinishLogin = () => {
     const completeLogin = async () => {
       try {
         if (typeof window === "undefined") return;
+
+        const auth = getClientAuth(); // ✅ IMPORTANT
+
         const email = window.localStorage.getItem("emailForSignIn");
 
         if (!email || !isSignInWithEmailLink(auth, window.location.href)) {
@@ -22,7 +25,12 @@ const FinishLogin = () => {
           return;
         }
 
-        const result = await signInWithEmailLink(auth, email, window.location.href);
+        const result = await signInWithEmailLink(
+          auth,
+          email,
+          window.location.href
+        );
+
         window.localStorage.removeItem("emailForSignIn");
 
         const db = getFirestore();
@@ -33,29 +41,22 @@ const FinishLogin = () => {
           const userData = docSnap.data();
           const statut = userData.statut || "patient";
           const username = userData.username || "";
-          const email2 = email;
 
-          Cookies.set("email", email2, { expires: 7 });
+          Cookies.set("email", email, { expires: 7 });
           Cookies.set("username", username, { expires: 7 });
           Cookies.set("statut", statut, { expires: 7 });
 
           if (statut === "patient") {
             router.push("/blog/pageAcceuil");
-          } 
-          
-           else if (statut === "pediatre") {
+          } else if (statut === "pediatre") {
             router.push("/blog/consPediatre");
-          }
-
-           else if (statut === "generaliste") {
+          } else if (statut === "generaliste") {
             router.push("/blog/consGeneral");
-          }
-
-          else {
+          } else {
             router.push("/blog/Docta");
           }
         } else {
-          setNotFound(true); // utilisateur non trouvé
+          setNotFound(true);
         }
       } catch (error: any) {
         console.error("Erreur de connexion :", error.message);
@@ -64,7 +65,7 @@ const FinishLogin = () => {
     };
 
     completeLogin();
-  }, []);
+  }, [router]);
 
   const handleRedirectToSignup = (e: React.FormEvent) => {
     e.preventDefault();
