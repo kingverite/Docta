@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { auth } from "@/lib/firebase"; // adapte le chemin selon ton projet
+//import { auth } from "@/lib/firebase"; // adapte le chemin selon ton projet
+import { getClientAuth } from "@/lib/firebase"; // adapte le chemin selon ton projet
 import axios from "axios";
 import Cookies from "js-cookie";
 import styles from "@/styles/Form.module.css";
@@ -24,6 +25,7 @@ const MedicalForm = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const auth = getClientAuth();
 
   //  Rediriger si l'utilisateur n'est pas connecté
   useEffect(() => {
