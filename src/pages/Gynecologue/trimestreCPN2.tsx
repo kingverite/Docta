@@ -26,10 +26,10 @@ const MedicalForm = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
-  const auth = getClientAuth();
 
   //  Rediriger si l'utilisateur n'est pas connecté
   useEffect(() => {
+    const auth = getClientAuth();
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (!user) {
         router.push("/blog/loginForm");
@@ -62,6 +62,7 @@ const MedicalForm = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
+      const auth = getClientAuth();
       const username = Cookies.get("username");
       const datetimeId = new Date().toISOString();
       const email = auth.currentUser?.email || "email inconnu";
