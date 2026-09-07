@@ -9,42 +9,96 @@ import {
   getDocs,
 } from "firebase/firestore";
 
-// 🔹 Types
-type SerdiTokenResponse = {
-  access_token: string;
-};
-
-type SerdiPaymentResponse = {
-  transactionId?: string;
-  message?: string;
+// 🔹 Réponse GoFreshPay
+type GoFreshPayResponse = {
+  Status?: string;
+  Comment?: string;
+  Reference?: string;
+  Customer_Number?: string;
+  Amount?: number;
+  Currency?: string;
+  Created_At?: string;
+  Updated_At?: string;
+  Transaction_id?: string;
 };
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // ❌ méthode non autorisée
+  // ❌ Méthode non autorisée
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({
+      error: "Method not allowed",
+    });
   }
 
   try {
-    const { phone, amount, telecom } = req.body;
+    // =====================================================
+    // 1️⃣ RÉCUPÉRER LES DONNÉES DU FRONTEND
+    // =====================================================
 
-    // 🔍 1. VALIDATION
+    const {
+      phone,
+      amount,
+      telecom,
+      firstname,
+      lastname,
+      email,
+    } = req.body;
+
+    // =====================================================
+    // 2️⃣ VALIDATION
+    // =====================================================
+
     if (!phone || !amount || !telecom) {
-      return res.status(400).json({ error: "Données manquantes" });
+      return res.status(400).json({
+        error: "Données manquantes",
+      });
     }
 
+    // 📱 Vérification numéro RDC
     if (!/^243\d{9}$/.test(phone)) {
-      return res.status(400).json({ error: "Numéro invalide (243...)" });
+      return res.status(400).json({
+        error: "Numéro invalide. Format attendu : 243XXXXXXXXX",
+      });
     }
 
-    if (Number(amount) <= 0) {
-      return res.status(400).json({ error: "Montant invalide" });
+    // 💰 Conversion du montant
+    const numericAmount = Number(amount);
+
+    if (
+      !Number.isFinite(numericAmount) ||
+      numericAmount <= 0
+    ) {
+      return res.status(400).json({
+        error: "Montant invalide",
+      });
     }
 
-    // 🚫 2. ANTI DOUBLE PAIEMENT (optionnel mais recommandé)
+    // =====================================================
+    // 3️⃣ CONVERSION OPÉRATEUR → GOFRESHPAY
+    // =====================================================
+
+    const methodMap: Record<string, string> = {
+      MP: "mpesa",
+      AM: "airtel",
+      OM: "orange",
+      AF: "afrimoney",
+    };
+
+    const method = methodMap[telecom];
+
+    if (!method) {
+      return res.status(400).json({
+        error: "Opérateur télécom invalide",
+      });
+    }
+
+    // =====================================================
+    // 4️⃣ ANTI DOUBLE PAIEMENT
+    // =====================================================
+
     const q = query(
       collection(db, "paiements"),
       where("phone", "==", phone),
@@ -55,53 +109,89 @@ export default async function handler(
 
     if (!existing.empty) {
       return res.status(409).json({
-        error: "Une transaction est déjà en cours pour ce numéro",
+        error:
+          "Une transaction est déjà en cours pour ce numéro",
       });
     }
 
-    // 🔐 3. RÉCUPÉRER TOKEN
-    const tokenRes = await axios.post<SerdiTokenResponse>(
-      "https://serdipay.com/api/public-api/v1/merchant/get-token",
-      {
-        email: process.env.SERDI_EMAIL,
-        password: process.env.SERDI_PASSWORD,
-      }
-    );
+    // =====================================================
+    // 5️⃣ GÉNÉRER UNE RÉFÉRENCE UNIQUE
+    // =====================================================
 
-    const token = tokenRes.data.access_token;
+    const reference = `order_${Date.now()}_${Math.random()
+      .toString(36)
+      .substring(2, 8)}`;
 
-    // 💳 4. PAIEMENT
-    const paymentRes = await axios.post<SerdiPaymentResponse>(
-      "https://serdipay.com/api/public-api/v1/merchant/payment-client",
-      {
-        api_id: process.env.API_ID,
-        api_password: process.env.API_PASSWORD,
-        merchantCode: process.env.MERCHANT_CODE,
-        merchant_pin: process.env.MERCHANT_PIN,
-        clientPhone: phone,
-        amount: Number(amount),
-        currency: "CDF",
-        telecom, // AM / OM / MP / AF
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+    // =====================================================
+    // 6️⃣ ENVOYER LE PAIEMENT À GOFRESHPAY
+    // =====================================================
+
+    const paymentRes =
+      await axios.post<GoFreshPayResponse>(
+        "https://api.gofreshpay.com/api/v1/gateway",
+        {
+          merchant_id:
+            process.env.GOFRESHPAY_MERCHANT_ID,
+
+          merchant_secrete:
+            process.env.GOFRESHPAY_MERCHANT_SECRET,
+
+          action: "debit",
+
+          method,
+
+          amount: String(numericAmount),
+
+          currency: "CDF",
+
+          customer_number: phone,
+
+          reference,
+
+          firstname: firstname || "Client",
+
+          lastname: lastname || "Client",
+
+          email: email || "client@example.com",
+
+          callback_url:
+            process.env.GOFRESHPAY_CALLBACK_URL,
         },
-      }
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          timeout: 30000,
+        }
+      );
+
+    // =====================================================
+    // 7️⃣ RÉPONSE GOFRESHPAY
+    // =====================================================
+
+    const data = paymentRes.data;
+
+    console.log(
+      "📥 Réponse GoFreshPay :",
+      data
     );
 
-    // 🔍 Debug (très utile)
-    console.log("SerdiPay response:", paymentRes.data);
+    // =====================================================
+    // 8️⃣ VÉRIFIER QUE GOFRESHPAY A RETOURNÉ UNE RÉFÉRENCE
+    // =====================================================
 
-    // 🆔 5. TRANSACTION ID (obligatoire)
-    const transactionId = paymentRes.data.transactionId;
-
-    if (!transactionId) {
-      throw new Error("transactionId manquant dans la réponse SerdiPay");
+    if (!data.Reference) {
+      return res.status(502).json({
+        error:
+          "Réponse GoFreshPay invalide : Reference manquante",
+      });
     }
 
-    // 🏷️ 6. NOM OPÉRATEUR (pour UI)
+    // =====================================================
+    // 9️⃣ NOM OPÉRATEUR
+    // =====================================================
+
     const operatorName =
       telecom === "AM"
         ? "Airtel"
@@ -111,33 +201,75 @@ export default async function handler(
         ? "Mpesa"
         : "Afrimoney";
 
-    // 💾 7. SAUVEGARDE FIRESTORE
+    // =====================================================
+    // 🔟 SAUVEGARDE FIRESTORE
+    // =====================================================
+
     await addDoc(collection(db, "paiements"), {
       phone,
-      amount: Number(amount),
+
+      amount: numericAmount,
+
       telecom,
+
       operatorName,
-      transactionId,
+
+      // 🔗 Très important pour le webhook
+      reference: data.Reference,
+
       status: "pending",
+
       statusLabel: "En attente",
+
+      firstname: firstname || null,
+
+      lastname: lastname || null,
+
+      email: email || null,
+
       createdAt: new Date(),
+
       updatedAt: new Date(),
     });
 
-    // ✅ 8. RÉPONSE FRONTEND
+    // =====================================================
+    // 1️⃣1️⃣ RÉPONSE AU FRONTEND
+    // =====================================================
+
     return res.status(200).json({
-      message: "Paiement initié. Confirmez sur votre téléphone.",
-      transactionId,
+      success: true,
+
+      message:
+        "Paiement initié. Veuillez confirmer sur votre téléphone.",
+
+      reference: data.Reference,
+
+      transactionId:
+        data.Transaction_id || null,
+
+      status:
+        data.Status || "Pending",
     });
   } catch (error: any) {
     console.error(
-      "Erreur paiement:",
-      error?.response?.data || error.message
+      "❌ Erreur paiement GoFreshPay :",
+      error?.response?.data ||
+        error?.message ||
+        error
     );
 
-    return res.status(500).json({
+    return res.status(
+      error?.response?.status >= 400 &&
+        error?.response?.status < 500
+        ? error.response.status
+        : 500
+    ).json({
+      success: false,
+
       error: "Erreur lors du paiement",
-      details: error?.response?.data || null,
+
+      details:
+        error?.response?.data || null,
     });
   }
 }
