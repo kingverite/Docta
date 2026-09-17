@@ -13,7 +13,9 @@ import {
 } from "firebase/firestore";
 
 /**
- * Réponse GoFreshPay lors de l'initialisation
+ * =====================================================
+ * RÉPONSE GOFRESHPAY LORS DE L'INITIALISATION
+ * =====================================================
  */
 type GoFreshPayResponse = {
   Status?: string;
@@ -28,10 +30,9 @@ type GoFreshPayResponse = {
 };
 
 /**
- * Réponse possible du Check Status API
- *
- * Le PDF indique que l'API verify peut retourner
- * Trans_Status : Submitted / Pending / Failed / Successful.
+ * =====================================================
+ * RÉPONSE GOFRESHPAY POUR VERIFY
+ * =====================================================
  */
 type GoFreshPayVerifyResponse = {
   Action?: string;
@@ -68,7 +69,7 @@ export default async function handler(
   try {
     /**
      * =====================================================
-     * 2. RÉCUPÉRATION DES DONNÉES DU FORMULAIRE
+     * 2. RÉCUPÉRATION DES DONNÉES
      * =====================================================
      */
     const {
@@ -93,7 +94,7 @@ export default async function handler(
 
     /**
      * =====================================================
-     * 3. VÉRIFICATION DES DONNÉES OBLIGATOIRES
+     * 3. DONNÉES OBLIGATOIRES
      * =====================================================
      */
     if (!phone || !amount || !telecom) {
@@ -104,15 +105,8 @@ export default async function handler(
 
     /**
      * =====================================================
-     * 4. VALIDATION DU NUMÉRO RDC
+     * 4. VALIDATION DU NUMÉRO
      * =====================================================
-     *
-     * Format attendu :
-     *
-     * 243XXXXXXXXX
-     *
-     * Exemple :
-     * 243974703854
      */
     if (!/^243\d{9}$/.test(String(phone))) {
       return res.status(400).json({
@@ -141,22 +135,6 @@ export default async function handler(
      * =====================================================
      * 6. CORRESPONDANCE DES OPÉRATEURS
      * =====================================================
-     *
-     * IMPORTANT :
-     *
-     * GoFreshPay attend les valeurs en minuscules :
-     *
-     * mpesa
-     * airtel
-     * orange
-     *
-     * et non :
-     *
-     * Mpesa
-     * Airtel
-     * Orange
-     *
-     * Le PDF montre également "airtel" dans Method.
      */
     const methodMap: Record<string, string> = {
       MP: "mpesa",
@@ -173,15 +151,20 @@ export default async function handler(
       });
     }
 
-    console.log("Méthode GoFreshPay :", method);
+    console.log(
+      "Méthode GoFreshPay :",
+      method
+    );
 
     /**
      * =====================================================
-     * 7. VÉRIFIER LES TRANSACTIONS EXISTANTES
+     * 7. RECHERCHE D'UNE TRANSACTION PENDING
      * =====================================================
      *
-     * On cherche les paiements du même numéro qui sont
-     * encore "pending".
+     * Une transaction SUCCESS ou FAILED ne bloque PAS
+     * un nouveau paiement.
+     *
+     * Seule une transaction PENDING peut bloquer.
      */
     const pendingQuery = query(
       collection(db, "paiements"),
@@ -195,88 +178,101 @@ export default async function handler(
 
     /**
      * =====================================================
-     * 8. TRAITEMENT D'UNE ANCIENNE TRANSACTION PENDING
+     * 8. TRAITER UNE ANCIENNE TRANSACTION PENDING
      * =====================================================
-     *
-     * Une ancienne transaction peut être restée "pending"
-     * dans Firestore si le callback n'est pas encore arrivé.
-     *
-     * Dans ce cas, nous vérifions directement son statut
-     * auprès de GoFreshPay avant de bloquer le nouveau paiement.
      */
     if (!pendingSnapshot.empty) {
       console.log(
-        "⚠️ Une transaction pending existe déjà pour ce numéro."
+        "⚠️ Une transaction pending existe déjà."
       );
 
       /**
-       * Nous traitons le premier paiement pending.
+       * Nous prenons la première transaction pending.
        */
-      const pendingDoc = pendingSnapshot.docs[0];
+      const pendingDoc =
+        pendingSnapshot.docs[0];
 
-      const pendingData = pendingDoc.data();
+      const pendingData =
+        pendingDoc.data();
 
       const pendingReference =
         pendingData.reference;
 
       /**
-       * Si nous avons une référence, nous pouvons utiliser
-       * l'action verify de GoFreshPay.
+       * -------------------------------------------------
+       * SANS RÉFÉRENCE
+       * -------------------------------------------------
        */
-      if (pendingReference) {
-        console.log(
-          "🔎 Vérification GoFreshPay de :",
-          pendingReference
-        );
+      if (!pendingReference) {
+        return res.status(409).json({
+          error:
+            "Une transaction est déjà en cours pour ce numéro.",
+        });
+      }
 
-        try {
-          const verifyRes =
-            await axios.post<GoFreshPayVerifyResponse>(
-              "https://api.gofreshpay.com/api/v1/gateway",
-              {
-                merchant_id:
-                  process.env.GOFRESHPAY_MERCHANT_ID,
+      console.log(
+        "🔎 Vérification GoFreshPay :",
+        pendingReference
+      );
 
-                merchant_secrete:
-                  process.env.GOFRESHPAY_MERCHANT_SECRET,
+      /**
+       * =================================================
+       * 8.1 VERIFY GOFRESHPAY
+       * =================================================
+       */
+      try {
+        const verifyRes =
+          await axios.post<GoFreshPayVerifyResponse>(
+            "https://api.gofreshpay.com/api/v1/gateway",
+            {
+              merchant_id:
+                process.env.GOFRESHPAY_MERCHANT_ID,
 
-                action: "verify",
+              merchant_secrete:
+                process.env.GOFRESHPAY_MERCHANT_SECRET,
 
-                reference: pendingReference,
+              action: "verify",
+
+              reference:
+                pendingReference,
+            },
+            {
+              headers: {
+                "Content-Type": "application/json",
               },
-              {
-                headers: {
-                  "Content-Type": "application/json",
-                },
 
-                timeout: 30000,
-              }
-            );
-
-          const verifyData = verifyRes.data;
-
-          console.log(
-            "📥 Vérification GoFreshPay :",
-            verifyData
+              timeout: 30000,
+            }
           );
 
-          /**
-           * =================================================
-           * PAIEMENT RÉUSSI
-           * =================================================
-           */
-          if (
-            verifyData.Trans_Status ===
-            "Successful"
-          ) {
-            await updateDoc(pendingDoc.ref, {
+        const verifyData =
+          verifyRes.data;
+
+        console.log(
+          "📥 Vérification GoFreshPay :",
+          verifyData
+        );
+
+        /**
+         * =================================================
+         * 8.2 TRANSACTION RÉUSSIE
+         * =================================================
+         */
+        if (
+          verifyData.Trans_Status ===
+          "Successful"
+        ) {
+          await updateDoc(
+            pendingDoc.ref,
+            {
               status: "success",
 
               statusLabel:
                 "Paiement réussi",
 
               Status:
-                verifyData.Status || null,
+                verifyData.Status ||
+                null,
 
               Trans_Status:
                 verifyData.Trans_Status,
@@ -294,34 +290,49 @@ export default async function handler(
                 null,
 
               Updated_at:
-                verifyData.Updated_at || null,
+                verifyData.Updated_at ||
+                null,
 
-              updatedAt: new Date(),
-            });
+              updatedAt:
+                new Date(),
+            }
+          );
 
-            return res.status(409).json({
-              error:
-                "Un paiement est déjà réussi pour ce numéro.",
-            });
-          }
+          console.log(
+            "✅ Ancienne transaction déjà réussie."
+          );
 
-          /**
-           * =================================================
-           * PAIEMENT ÉCHOUÉ
-           * =================================================
-           */
-          if (
-            verifyData.Trans_Status ===
-            "Failed"
-          ) {
-            await updateDoc(pendingDoc.ref, {
+          return res.status(409).json({
+            error:
+              "Un paiement est déjà réussi pour ce numéro.",
+          });
+        }
+
+        /**
+         * =================================================
+         * 8.3 TRANSACTION ÉCHOUÉE
+         * =================================================
+         *
+         * Une transaction Failed ne bloque plus.
+         * Nous mettons d'abord Firestore à jour,
+         * puis le code continue vers la création
+         * d'un nouveau paiement.
+         */
+        if (
+          verifyData.Trans_Status ===
+          "Failed"
+        ) {
+          await updateDoc(
+            pendingDoc.ref,
+            {
               status: "failed",
 
               statusLabel:
                 "Paiement échoué",
 
               Status:
-                verifyData.Status || null,
+                verifyData.Status ||
+                null,
 
               Trans_Status:
                 verifyData.Trans_Status,
@@ -339,73 +350,96 @@ export default async function handler(
                 null,
 
               Updated_at:
-                verifyData.Updated_at || null,
+                verifyData.Updated_at ||
+                null,
 
-              updatedAt: new Date(),
-            });
-
-            console.log(
-              "✅ Ancienne transaction échouée."
-            );
-
-            console.log(
-              "➡️ Nouveau paiement autorisé."
-            );
-          }
-
-          /**
-           * =================================================
-           * PAIEMENT ENCORE EN TRAITEMENT
-           * =================================================
-           *
-           * Le PDF indique que Check Status peut retourner
-           * Submitted ou Pending.
-           */
-          if (
-            verifyData.Trans_Status ===
-              "Pending" ||
-            verifyData.Trans_Status ===
-              "Submitted"
-          ) {
-            return res.status(409).json({
-              error:
-                "Une transaction est toujours en cours pour ce numéro. Veuillez attendre sa finalisation.",
-            });
-          }
-        } catch (verifyError: any) {
-          console.error(
-            "❌ Erreur lors de la vérification GoFreshPay :",
-            verifyError?.response?.data ||
-              verifyError?.message ||
-              verifyError
+              updatedAt:
+                new Date(),
+            }
           );
 
-          /**
-           * Par sécurité, si nous ne pouvons pas connaître
-           * le statut de l'ancienne transaction, nous ne
-           * lançons PAS automatiquement une nouvelle
-           * transaction.
-           */
+          console.log(
+            "❌ Ancienne transaction = Failed."
+          );
+
+          console.log(
+            "➡️ Nouveau paiement autorisé."
+          );
+        }
+
+        /**
+         * =================================================
+         * 8.4 TRANSACTION ENCORE EN COURS
+         * =================================================
+         */
+        if (
+          verifyData.Trans_Status ===
+            "Pending" ||
+          verifyData.Trans_Status ===
+            "Submitted"
+        ) {
+          console.log(
+            "⏳ Ancienne transaction toujours en cours."
+          );
+
           return res.status(409).json({
             error:
-              "Une transaction est déjà en cours pour ce numéro. Impossible de vérifier son statut pour le moment.",
+              "Une transaction est toujours en cours pour ce numéro. Veuillez attendre sa finalisation.",
           });
         }
-      } else {
+
         /**
-         * Une transaction pending sans référence est
-         * anormale : on bloque par sécurité.
+         * =================================================
+         * 8.5 STATUT INCONNU
+         * =================================================
+         *
+         * Par sécurité, si GoFreshPay renvoie une valeur
+         * que nous ne connaissons pas, nous ne créons
+         * pas une deuxième transaction.
+         */
+        if (
+          verifyData.Trans_Status !==
+            "Failed" &&
+          verifyData.Trans_Status !==
+            "Successful" &&
+          verifyData.Trans_Status !==
+            "Pending" &&
+          verifyData.Trans_Status !==
+            "Submitted"
+        ) {
+          console.error(
+            "⚠️ Statut GoFreshPay inconnu :",
+            verifyData.Trans_Status
+          );
+
+          return res.status(409).json({
+            error:
+              "Impossible de déterminer le statut de la transaction précédente.",
+          });
+        }
+      } catch (verifyError: any) {
+        console.error(
+          "❌ Erreur VERIFY GoFreshPay :",
+          verifyError?.response?.data ||
+            verifyError?.message ||
+            verifyError
+        );
+
+        /**
+         * Par sécurité :
+         * si nous ne connaissons pas le statut réel,
+         * nous ne lançons pas un nouveau paiement.
          */
         return res.status(409).json({
           error:
-            "Une transaction est déjà en cours pour ce numéro.",
+            "Une transaction est déjà en cours pour ce numéro. Impossible de vérifier son statut pour le moment.",
         });
       }
     }
 
     /**
      * =====================================================
-     * 9. GÉNÉRATION DE LA RÉFÉRENCE
+     * 9. GÉNÉRATION D'UNE NOUVELLE RÉFÉRENCE
      * =====================================================
      */
     const reference =
@@ -421,7 +455,7 @@ export default async function handler(
 
     /**
      * =====================================================
-     * 10. VÉRIFICATION DES VARIABLES D'ENVIRONNEMENT
+     * 10. VARIABLES D'ENVIRONNEMENT
      * =====================================================
      */
     console.log(
@@ -445,7 +479,7 @@ export default async function handler(
 
     /**
      * =====================================================
-     * 11. PAYLOAD ENVOYÉ À GOFRESHPAY
+     * 11. PAYLOAD GOFRESHPAY
      * =====================================================
      */
     const payload = {
@@ -459,11 +493,13 @@ export default async function handler(
 
       method,
 
-      amount: String(numericAmount),
+      amount:
+        String(numericAmount),
 
       currency: "CDF",
 
-      customer_number: String(phone),
+      customer_number:
+        String(phone),
 
       reference,
 
@@ -474,14 +510,15 @@ export default async function handler(
         lastname || "Client",
 
       email:
-        email || "client@example.com",
+        email ||
+        "client@example.com",
 
       callback_url:
         process.env.GOFRESHPAY_CALLBACK_URL,
     };
 
     /**
-     * NE PAS afficher payload complet ici,
+     * Ne jamais afficher le payload complet
      * car il contient le merchant secret.
      */
     console.log(
@@ -511,7 +548,7 @@ export default async function handler(
 
     /**
      * =====================================================
-     * 12. ENVOI À GOFRESHPAY
+     * 12. ENVOI DU PAIEMENT À GOFRESHPAY
      * =====================================================
      */
     const paymentRes =
@@ -520,14 +557,16 @@ export default async function handler(
         payload,
         {
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
 
           timeout: 30000,
         }
       );
 
-    const data = paymentRes.data;
+    const data =
+      paymentRes.data;
 
     console.log(
       "📥 Réponse GoFreshPay :",
@@ -536,12 +575,12 @@ export default async function handler(
 
     /**
      * =====================================================
-     * 13. VÉRIFIER LA RÉFÉRENCE
+     * 13. VÉRIFICATION DE LA RÉFÉRENCE
      * =====================================================
      */
     if (!data.Reference) {
       console.error(
-        "❌ Réponse GoFreshPay sans Reference"
+        "❌ Reference absente de la réponse GoFreshPay."
       );
 
       return res.status(502).json({
@@ -552,7 +591,7 @@ export default async function handler(
 
     /**
      * =====================================================
-     * 14. NOM DE L'OPÉRATEUR
+     * 14. NOM OPÉRATEUR
      * =====================================================
      */
     const operatorName =
@@ -566,91 +605,104 @@ export default async function handler(
 
     /**
      * =====================================================
-     * 15. ENREGISTREMENT FIRESTORE
+     * 15. CRÉATION DU DOCUMENT FIRESTORE
      * =====================================================
      *
-     * IMPORTANT :
+     * Le statut initial est TOUJOURS pending.
      *
-     * Status = Success dans la réponse initiale ne veut
-     * PAS dire que le paiement est réussi.
+     * Même si GoFreshPay répond :
      *
-     * On conserve donc :
+     * Status: Success
      *
-     * status: pending
-     *
-     * jusqu'au callback final.
+     * cela signifie seulement que la demande a été reçue.
      */
-    await addDoc(
-      collection(db, "paiements"),
-      {
-        /**
-         * Informations client
-         */
-        phone: String(phone),
+    const paymentDoc =
+      await addDoc(
+        collection(db, "paiements"),
+        {
+          /**
+           * Informations client
+           */
+          phone:
+            String(phone),
 
-        firstname:
-          firstname || null,
+          firstname:
+            firstname || null,
 
-        lastname:
-          lastname || null,
+          lastname:
+            lastname || null,
 
-        email:
-          email || null,
+          email:
+            email || null,
 
-        /**
-         * Informations paiement
-         */
-        amount: numericAmount,
+          /**
+           * Informations paiement
+           */
+          amount:
+            numericAmount,
 
-        telecom,
+          telecom,
 
-        operatorName,
+          operatorName,
 
-        reference: data.Reference,
+          reference:
+            data.Reference,
 
-        /**
-         * Le paiement est encore en traitement.
-         */
-        status: "pending",
+          /**
+           * Statut application
+           */
+          status:
+            "pending",
 
-        statusLabel:
-          "En attente",
+          statusLabel:
+            "En attente",
 
-        /**
-         * Réponse initiale FreshPay
-         */
-        Status:
-          data.Status || null,
+          /**
+           * Réponse initiale GoFreshPay
+           */
+          Status:
+            data.Status || null,
 
-        Comment:
-          data.Comment || null,
+          Comment:
+            data.Comment || null,
 
-        Customer_Number:
-          data.Customer_Number || null,
+          Customer_Number:
+            data.Customer_Number ||
+            null,
 
-        Currency:
-          data.Currency || null,
+          Currency:
+            data.Currency || null,
 
-        Transaction_id:
-          data.Transaction_id || null,
+          Transaction_id:
+            data.Transaction_id ||
+            null,
 
-        Created_At:
-          data.Created_At || null,
+          Created_At:
+            data.Created_At ||
+            null,
 
-        Updated_At:
-          data.Updated_At || null,
+          Updated_At:
+            data.Updated_At ||
+            null,
 
-        /**
-         * Dates Firestore
-         */
-        createdAt: new Date(),
+          /**
+           * Dates Firestore
+           */
+          createdAt:
+            new Date(),
 
-        updatedAt: new Date(),
-      }
-    );
+          updatedAt:
+            new Date(),
+        }
+      );
 
     console.log(
       "✅ Paiement enregistré dans Firestore."
+    );
+
+    console.log(
+      "Firestore document ID :",
+      paymentDoc.id
     );
 
     console.log("=================================");
@@ -670,20 +722,30 @@ export default async function handler(
         data.Reference,
 
       transactionId:
-        data.Transaction_id || null,
+        data.Transaction_id ||
+        null,
 
       /**
-       * ATTENTION :
-       * ceci correspond au statut de réception de
-       * la demande, pas au résultat final.
+       * ID exact du document Firestore.
+       *
+       * Le frontend l'utilisera pour écouter
+       * les changements en temps réel.
+       */
+      paymentId:
+        paymentDoc.id,
+
+      /**
+       * Attention :
+       * Status = réception de la demande.
+       * Ce n'est PAS le résultat final.
        */
       status:
-        data.Status || "Pending",
+        "pending",
     });
   } catch (error: any) {
     /**
      * =====================================================
-     * 17. GESTION DES ERREURS
+     * 17. ERREUR GÉNÉRALE
      * =====================================================
      */
     console.error(
@@ -696,26 +758,23 @@ export default async function handler(
     const providerStatus =
       error?.response?.status;
 
-    /**
-     * Si GoFreshPay renvoie une erreur 4xx,
-     * on conserve son code.
-     *
-     * Sinon → 500.
-     */
     const statusCode =
       providerStatus >= 400 &&
       providerStatus < 500
         ? providerStatus
         : 500;
 
-    return res.status(statusCode).json({
+    return res.status(
+      statusCode
+    ).json({
       success: false,
 
       error:
         "Erreur lors du paiement",
 
       details:
-        error?.response?.data || null,
+        error?.response?.data ||
+        null,
     });
   }
 }
