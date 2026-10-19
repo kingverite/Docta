@@ -1134,7 +1134,100 @@
     color: rgb(255, 255, 255);
   }
 
+/*/////////////////////////////CARDPAIEMENT CSS///////////////////////////////////////////////////*/
 
+.containerVisa {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px 15px;
+}
+
+.cardVisa {
+  width: 100%;
+  max-width: 600px;
+  padding: 30px;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.cardVisa h1 {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.infoVisa {
+  margin-bottom: 25px;
+  text-align: center;
+  color: #666;
+}
+
+.cardVisa form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cardVisa label {
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.cardVisa input,
+.cardVisa select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cardVisa button {
+  margin-top: 20px;
+  padding: 14px;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.cardVisa button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.errorVisa {
+  padding: 12px;
+  border-radius: 6px;
+  background: #ffe5e5;
+  color: #b00020;
+}
+
+@media (max-width: 600px) {
+  .cardVisa {
+    padding: 20px;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+  }
+}
 
  
   
