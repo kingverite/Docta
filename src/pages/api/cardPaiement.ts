@@ -37,10 +37,31 @@ type ApiResponse = {
   paymentUrl?: string;
 };
 
+type ProviderData = Record<string, unknown>;
+
 function generateReference(): string {
   return `CARD_${Date.now()}_${crypto
     .randomBytes(4)
     .toString("hex")}`;
+}
+
+function isRecord(value: unknown): value is ProviderData {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value)
+  );
+}
+
+function getString(
+  object: ProviderData,
+  key: string
+): string | undefined {
+  const value = object[key];
+
+  return typeof value === "string"
+    ? value
+    : undefined;
 }
 
 export default async function handler(
@@ -62,7 +83,7 @@ export default async function handler(
 
   try {
     // --------------------------------------------------
-    // 2. Lire les informations envoyées par le frontend
+    // 2. Lire les données du client
     // --------------------------------------------------
 
     const {
@@ -80,7 +101,7 @@ export default async function handler(
     } = req.body as CardPaymentRequest;
 
     // --------------------------------------------------
-    // 3. Valider le montant
+    // 3. Valider le montant et la devise
     // --------------------------------------------------
 
     const numericAmount = Number(amount);
@@ -104,10 +125,10 @@ export default async function handler(
     }
 
     // --------------------------------------------------
-    // 4. Valider les informations du client
+    // 4. Vérifier les informations obligatoires
     // --------------------------------------------------
 
-    const requiredFields = {
+    const requiredFields: Record<string, unknown> = {
       firstname,
       lastname,
       email,
@@ -123,7 +144,7 @@ export default async function handler(
           typeof value !== "string" ||
           value.trim() === ""
       )
-      .map(([field]) => field);
+      .map(([key]) => key);
 
     if (missingFields.length > 0) {
       return res.status(400).json({
@@ -133,9 +154,9 @@ export default async function handler(
       });
     }
 
-    if (
-      !/^[A-Z]{2}$/i.test(country.trim())
-    ) {
+    const normalizedCountry = country.trim().toUpperCase();
+
+    if (!/^[A-Z]{2}$/.test(normalizedCountry)) {
       return res.status(400).json({
         success: false,
         error:
@@ -144,29 +165,16 @@ export default async function handler(
     }
 
     // --------------------------------------------------
-    // 5. Lire les variables d'environnement Vercel
+    // 5. Vérifier les variables d'environnement Vercel
     // --------------------------------------------------
 
-    const DIGITALOCEAN_API_URL =
+    const digitalOceanApiUrl =
       process.env.DIGITALOCEAN_API_URL;
 
-      console.log(
-  "DIGITALOCEAN_API_URL configurée :",
-  Boolean(DIGITALOCEAN_API_URL)
-);
-
-console.log(
-  "DIGITALOCEAN_API_URL utilise example.com :",
-  DIGITALOCEAN_API_URL?.includes("example.com")
-);
-
-    const INTERNAL_API_SECRET =
+    const internalApiSecret =
       process.env.INTERNAL_API_SECRET;
 
-    if (
-      !DIGITALOCEAN_API_URL ||
-      !INTERNAL_API_SECRET
-    ) {
+    if (!digitalOceanApiUrl || !internalApiSecret) {
       console.error(
         "Configuration DigitalOcean manquante."
       );
@@ -178,6 +186,34 @@ console.log(
       });
     }
 
+    let baseUrl: URL;
+
+    try {
+      baseUrl = new URL(digitalOceanApiUrl);
+    } catch {
+      return res.status(500).json({
+        success: false,
+        error:
+          "L'adresse du serveur de paiement est invalide.",
+      });
+    }
+
+    if (
+      baseUrl.protocol !== "https:" ||
+      baseUrl.hostname === "example.com" ||
+      baseUrl.hostname.endsWith(".example.com")
+    ) {
+      console.error(
+        "L'adresse du serveur de paiement n'est pas correctement configurée."
+      );
+
+      return res.status(500).json({
+        success: false,
+        error:
+          "L'adresse HTTPS du serveur de paiement doit être configurée dans Vercel.",
+      });
+    }
+
     // --------------------------------------------------
     // 6. Générer une référence unique
     // --------------------------------------------------
@@ -185,11 +221,12 @@ console.log(
     const merchantReference = generateReference();
 
     // --------------------------------------------------
-    // 7. Préparer les données pour le serveur Express
+    // 7. Préparer la requête destinée à DigitalOcean
     // --------------------------------------------------
 
-    const paymentPayload = {
+    const paymentPayload: Record<string, unknown> = {
       amount: Number(numericAmount.toFixed(2)),
+
       merchant_reference: merchantReference,
 
       bill_to_forename: firstname.trim(),
@@ -199,46 +236,39 @@ console.log(
 
       bill_to_address_line1: address.trim(),
       bill_to_address_city: city.trim(),
-      bill_to_address_country:
-        country.trim().toUpperCase(),
+      bill_to_address_country: normalizedCountry,
 
-      ...(state?.trim()
-        ? {
-            bill_to_address_state: state.trim(),
-          }
-        : {}),
-
-      ...(postalCode?.trim()
-        ? {
-            bill_to_address_postal_code:
-              postalCode.trim(),
-          }
-        : {}),
-
-      callback_url:
-        process.env.MOKO_CALLBACK_URL,
-
-      return_url:
-        process.env.MOKO_RETURN_URL,
-
-      cancel_url:
-        process.env.MOKO_CANCEL_URL,
+      callback_url: process.env.MOKO_CALLBACK_URL,
+      return_url: process.env.MOKO_RETURN_URL,
+      cancel_url: process.env.MOKO_CANCEL_URL,
     };
 
+    if (state?.trim()) {
+      paymentPayload.bill_to_address_state =
+        state.trim();
+    }
+
+    if (postalCode?.trim()) {
+      paymentPayload.bill_to_address_postal_code =
+        postalCode.trim();
+    }
+
     // --------------------------------------------------
-    // 8. Appeler DigitalOcean en HTTPS
+    // 8. Appeler le serveur Express par HTTPS
     // --------------------------------------------------
 
-    const baseUrl =
-      DIGITALOCEAN_API_URL.replace(/\/+$/, "");
+    const endpoint = new URL(
+      "/api/cybersource/payment",
+      baseUrl
+    ).toString();
 
-    const response = await axios.post(
-      `${baseUrl}/api/cybersource/payment`,
+    const response = await axios.post<unknown>(
+      endpoint,
       paymentPayload,
       {
         headers: {
           "Content-Type": "application/json",
-          "X-Internal-Secret": INTERNAL_API_SECRET,
+          "X-Internal-Secret": internalApiSecret,
         },
 
         timeout: 30000,
@@ -248,13 +278,23 @@ console.log(
     );
 
     // --------------------------------------------------
-    // 9. Vérifier la réponse du serveur de paiement
+    // 9. Interpréter la réponse du prestataire
     // --------------------------------------------------
 
-    if (
-      response.status < 200 ||
-      response.status >= 300
-    ) {
+    if (response.status < 200 || response.status >= 300) {
+      const providerError: unknown = response.data;
+
+      let errorMessage =
+        "Impossible d'initialiser le paiement par carte.";
+
+      if (isRecord(providerError)) {
+        errorMessage =
+          getString(providerError, "error") ||
+          getString(providerError, "message") ||
+          getString(providerError, "detail") ||
+          errorMessage;
+      }
+
       console.error(
         "Échec de l'initialisation du paiement :",
         {
@@ -265,31 +305,37 @@ console.log(
 
       return res.status(502).json({
         success: false,
-        error:
-          response.data?.error ||
-          "Impossible d'initialiser le paiement par carte.",
+        error: errorMessage,
       });
     }
 
-    const providerData = response.data;
+    const providerData: ProviderData =
+      isRecord(response.data)
+        ? response.data
+        : {};
 
     const providerStatus = String(
-      providerData?.status ?? ""
+      providerData.status ?? ""
     ).toLowerCase();
 
-    const paymentData = providerData?.data;
+    const paymentData: ProviderData =
+      isRecord(providerData.data)
+        ? providerData.data
+        : {};
 
-    const paymentUrl =
-      paymentData?.links;
+    const paymentUrl = getString(
+      paymentData,
+      "links"
+    );
 
     const transactionUuid =
-      paymentData?.transaction_uuid ??
-      paymentData?.transaction_id ??
-      paymentData?.id;
+      getString(paymentData, "transaction_uuid") ||
+      getString(paymentData, "transaction_id") ||
+      getString(paymentData, "id");
 
     if (
       providerStatus !== "success" ||
-      typeof paymentUrl !== "string" ||
+      !paymentUrl ||
       !/^https:\/\//i.test(paymentUrl)
     ) {
       console.error(
@@ -298,8 +344,7 @@ console.log(
           httpStatus: response.status,
           providerStatus,
           reference: merchantReference,
-          hasPaymentUrl:
-            typeof paymentUrl === "string",
+          hasPaymentUrl: Boolean(paymentUrl),
         }
       );
 
@@ -318,12 +363,12 @@ console.log(
       collection(db, "paiements"),
       {
         type: "card",
+
         provider: "MokoAfrika",
 
         reference: merchantReference,
 
-        transactionUuid:
-          transactionUuid || null,
+        transactionUuid: transactionUuid || null,
 
         amount: numericAmount,
         currency: "USD",
@@ -340,14 +385,16 @@ console.log(
 
         address: address.trim(),
         city: city.trim(),
-        country: country.trim().toUpperCase(),
+        country: normalizedCountry,
 
         state: state?.trim() || "",
         postalCode: postalCode?.trim() || "",
 
         transactionStatus:
-          paymentData?.transaction_status ||
-          "PENDING",
+          getString(
+            paymentData,
+            "transaction_status"
+          ) || "PENDING",
 
         paymentUrl,
 
@@ -357,7 +404,7 @@ console.log(
     );
 
     // --------------------------------------------------
-    // 11. Retourner les informations au frontend
+    // 11. Répondre au frontend
     // --------------------------------------------------
 
     return res.status(200).json({
@@ -370,32 +417,37 @@ console.log(
 
       reference: merchantReference,
 
-      transactionUuid:
-        transactionUuid || undefined,
+      transactionUuid,
 
       paymentUrl,
     });
   } catch (error: unknown) {
-    const axiosError = axios.isAxiosError(error)
-      ? error
-      : null;
+  let errorMessage =
+    "Une erreur est survenue lors de l'initialisation du paiement.";
 
-    console.error(
-      "Erreur cardPaiement :",
-      axiosError
-        ? {
-            status: axiosError.response?.status,
-            code: axiosError.code,
-          }
-        : error instanceof Error
-          ? error.message
-          : "Erreur inconnue"
-    );
+  if (error instanceof Error) {
+    const axiosError = error as Error & {
+      response?: {
+        status?: number;
+        data?: unknown;
+      };
+      code?: string;
+    };
 
-    return res.status(502).json({
-      success: false,
-      error:
-        "Une erreur est survenue lors de l'initialisation du paiement.",
+    console.error("Erreur cardPaiement :", {
+      message: axiosError.message,
+      status: axiosError.response?.status,
+      code: axiosError.code,
     });
+  } else {
+    console.error(
+      "Erreur cardPaiement inconnue."
+    );
   }
+
+  return res.status(502).json({
+    success: false,
+    error: errorMessage,
+  });
+}
 }
