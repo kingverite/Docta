@@ -174,6 +174,13 @@ export default async function handler(
     const internalApiSecret =
       process.env.INTERNAL_API_SECRET;
 
+      console.log("Vérification de la configuration :", {
+  digitalOceanUrlConfiguree: Boolean(digitalOceanApiUrl),
+  internalSecretConfigure: Boolean(internalApiSecret),
+  urlExemple:
+    digitalOceanApiUrl?.includes("example.com") ?? false,
+});
+
     if (!digitalOceanApiUrl || !internalApiSecret) {
       console.error(
         "Configuration DigitalOcean manquante."
