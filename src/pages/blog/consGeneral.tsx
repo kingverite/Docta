@@ -26,6 +26,7 @@ export default function Specialiste() {
           <ul className={styles.specialtiesMenu}>
           <li><Link href="/general/general2">ConsultationGénérale</Link></li>
           <li><Link href="/general/urgence2">Urgence</Link></li>
+          <li><Link href="/paiements/paiementVisa">Urgence</Link></li>
             
 
           </ul>
