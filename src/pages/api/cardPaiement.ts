@@ -36,10 +36,7 @@ type ApiResponse = {
   transactionUuid?: string;
   paymentUrl?: string;
 
-  // Diagnostic temporaire
-  digitalOceanUrlConfigured?: boolean;
-  usesExampleDomain?: boolean;
-  usesHttps?: boolean;
+  
 };
 
 type ProviderData = Record<string, unknown>;
@@ -74,21 +71,6 @@ export default async function handler(
   res: NextApiResponse<ApiResponse>
 ) {
 
-  // --------------------------///////////////////////////////////------------------------
-  // DIAGNOSTIC TEMPORAIRE — à supprimer après vérification
-  if (req.method === "GET") {
-    const url = process.env.DIGITALOCEAN_API_URL;
-
-    return res.status(200).json({
-      success: true,
-      digitalOceanUrlConfigured: Boolean(url),
-      usesExampleDomain:
-        url?.includes("example.com") ?? false,
-      usesHttps:
-        url?.startsWith("https://") ?? false,
-    });
-  }
-  //
   // --------------------------///////////////////////////////////------------------------
   // 1. Vérifier la méthode HTTP
   // --------------------------------------------------
