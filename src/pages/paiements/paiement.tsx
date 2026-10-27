@@ -428,6 +428,38 @@ export default function Paiement() {
         setLoading(false);
       }
     } catch (err: unknown) {
+if (
+    typeof err === "object" &&
+    err !== null &&
+    "response" in err
+  ) {
+    const response = (
+      err as {
+        response?: {
+          status?: number;
+          data?: unknown;
+        };
+      }
+    ).response;
+
+    console.error(
+      "STATUT HTTP :",
+      response?.status
+    );
+
+    console.error(
+      "RÉPONSE API COMPLÈTE :",
+      JSON.stringify(response?.data, null, 2)
+    );
+  } else {
+    console.error(
+      "ERREUR PAIEMENT :",
+      err
+    );
+  }
+
+  // Conserve ici le reste de ton catch actuel.
+      
       console.error(
         "Erreur frontend paiement :",
         err
