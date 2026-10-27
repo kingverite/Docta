@@ -18,11 +18,10 @@ type PaymentResponse = {
   success?: boolean;
   message?: string;
   reference?: string;
-  transactionId?: string;
+  transactionId?: string | null;
   paymentId?: string;
   status?: string;
   error?: string;
-  details?: unknown;
 };
 
 /**
@@ -45,68 +44,127 @@ type PaymentFirestore = {
   phone?: string;
 };
 
+/**
+ * =====================================================
+ * RÉPONSE D'ERREUR HTTP
+ * =====================================================
+ */
+type ApiErrorResponse = {
+  success?: boolean;
+  error?: string;
+  message?: string;
+  reference?: string;
+  paymentId?: string;
+};
+
+type TelecomCode = "MP" | "AM" | "OM" | "AF";
+
+const OPERATORS: Record<
+  TelecomCode,
+  {
+    label: string;
+    placeholder: string;
+    help: string;
+    error: string;
+  }
+> = {
+  MP: {
+    label: "M-Pesa",
+    placeholder: "243970000000",
+    help: "M-Pesa : 243 suivi de 9 chiffres.",
+    error:
+      "Numéro M-Pesa invalide. Utilisez 243 suivi de 9 chiffres. Exemple : 243970000000.",
+  },
+
+  AM: {
+    label: "Airtel Money",
+    placeholder: "0970000000",
+    help: "Airtel Money : 0 suivi de 9 chiffres.",
+    error:
+      "Numéro Airtel Money invalide. Utilisez 0 suivi de 9 chiffres. Exemple : 0970000000.",
+  },
+
+  OM: {
+    label: "Orange Money",
+    placeholder: "0840000000",
+    help: "Orange Money : 0 suivi de 9 chiffres.",
+    error:
+      "Numéro Orange Money invalide. Utilisez 0 suivi de 9 chiffres. Exemple : 0840000000.",
+  },
+
+  AF: {
+    label: "Afrimoney",
+    placeholder: "0900000000",
+    help: "Afrimoney : 0 suivi de 9 chiffres.",
+    error:
+      "Numéro Afrimoney invalide. Utilisez 0 suivi de 9 chiffres. Exemple : 0900000000.",
+  },
+};
+
+/**
+ * =====================================================
+ * VALIDATION DU NUMÉRO
+ * Doit correspondre à apiPayment.ts.
+ * =====================================================
+ */
+function validatePhone(
+  phone: string,
+  telecom: TelecomCode
+): boolean {
+  if (telecom === "MP") {
+    return /^243\d{9}$/.test(phone);
+  }
+
+  if (
+    telecom === "AM" ||
+    telecom === "OM" ||
+    telecom === "AF"
+  ) {
+    return /^0\d{9}$/.test(phone);
+  }
+
+  return false;
+}
+
 export default function Paiement() {
   /**
    * =====================================================
    * DONNÉES DU FORMULAIRE
    * =====================================================
    */
-  const [phone, setPhone] =
-    useState("");
-
-  const [amount, setAmount] =
-    useState("");
-
+  const [phone, setPhone] = useState("");
+  const [amount, setAmount] = useState("");
   const [telecom, setTelecom] =
-    useState("MP");
+    useState<TelecomCode>("MP");
 
-  const [firstname, setFirstname] =
-    useState("");
-
-  const [lastname, setLastname] =
-    useState("");
-
-  const [email, setEmail] =
-    useState("");
+  const [firstname, setFirstname] = useState("");
+  const [lastname, setLastname] = useState("");
+  const [email, setEmail] = useState("");
 
   /**
    * =====================================================
    * ÉTAT DE CHARGEMENT
    * =====================================================
    */
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
   /**
    * =====================================================
    * MESSAGES
    * =====================================================
    */
-  const [message, setMessage] =
-    useState("");
-
-  const [error, setError] =
-    useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   /**
    * =====================================================
-   * INFORMATIONS TRANSACTION
+   * INFORMATIONS DE TRANSACTION
    * =====================================================
    */
-  const [reference, setReference] =
-    useState("");
-
+  const [reference, setReference] = useState("");
   const [transactionId, setTransactionId] =
     useState("");
-
-  /**
-   * ID DU DOCUMENT FIRESTORE
-   *
-   * C'est cet ID qui nous permet d'écouter
-   * précisément la transaction actuelle.
-   */
-  const [paymentId, setPaymentId] =
-    useState("");
+  const [paymentId, setPaymentId] = useState("");
 
   /**
    * =====================================================
@@ -115,7 +173,6 @@ export default function Paiement() {
    */
   const [paymentStatus, setPaymentStatus] =
     useState("");
-
   const [paymentStatusLabel, setPaymentStatusLabel] =
     useState("");
 
@@ -124,181 +181,103 @@ export default function Paiement() {
    * 1. ÉCOUTE FIRESTORE EN TEMPS RÉEL
    * =====================================================
    *
-   * Dès que webhook.ts modifie le document,
-   * cette fonction reçoit automatiquement la modification.
+   * L'API retourne paymentId après avoir créé le
+   * document dans la collection "paiements".
+   *
+   * Ce composant écoute ensuite précisément ce document.
    */
   useEffect(() => {
-    /**
-     * Aucun paiement à écouter.
-     */
     if (!paymentId) {
       return;
     }
 
     console.log(
-      "👂 Écoute Firestore du paiement :",
+      "Écoute Firestore du paiement :",
       paymentId
     );
 
-    /**
-     * Référence du document Firestore.
-     */
     const paymentRef = doc(
       db,
       "paiements",
       paymentId
     );
 
-    /**
-     * Écoute en temps réel.
-     */
-    const unsubscribe =
-      onSnapshot(
-        paymentRef,
-        (snapshot) => {
-          /**
-           * Le document n'existe plus.
-           */
-          if (!snapshot.exists()) {
-            console.log(
-              "⚠️ Document paiement introuvable."
-            );
-
-            return;
-          }
-
-          const data =
-            snapshot.data() as PaymentFirestore;
-
-          console.log(
-            "📡 Mise à jour paiement Firestore :",
-            data
+    const unsubscribe = onSnapshot(
+      paymentRef,
+      (snapshot) => {
+        if (!snapshot.exists()) {
+          console.warn(
+            "Document de paiement introuvable."
           );
+          return;
+        }
 
-          /**
-           * =================================================
-           * STATUT
-           * =================================================
-           */
-          if (data.status) {
-            setPaymentStatus(
-              data.status
-            );
-          }
+        const data =
+          snapshot.data() as PaymentFirestore;
 
-          /**
-           * =================================================
-           * LABEL
-           * =================================================
-           */
-          if (data.statusLabel) {
-            setPaymentStatusLabel(
-              data.statusLabel
-            );
-          }
+        console.log(
+          "Mise à jour Firestore :",
+          data
+        );
 
-          /**
-           * =================================================
-           * RÉFÉRENCE
-           * =================================================
-           */
-          if (data.reference) {
-            setReference(
-              data.reference
-            );
-          }
+        if (data.status) {
+          setPaymentStatus(data.status);
+        }
 
-          /**
-           * =================================================
-           * TRANSACTION ID
-           * =================================================
-           */
-          if (data.Transaction_id) {
-            setTransactionId(
-              data.Transaction_id
-            );
-          }
+        if (data.statusLabel) {
+          setPaymentStatusLabel(data.statusLabel);
+        }
 
-          /**
-           * =================================================
-           * PAIEMENT RÉUSSI
-           * =================================================
-           */
-          if (
-            data.status ===
-            "success"
-          ) {
-            console.log(
-              "✅ Paiement confirmé."
-            );
+        if (data.reference) {
+          setReference(data.reference);
+        }
 
-            setLoading(false);
+        if (data.Transaction_id) {
+          setTransactionId(data.Transaction_id);
+        }
 
-            setMessage(
-              "Votre paiement a été confirmé avec succès."
-            );
+        /**
+         * PAIEMENT RÉUSSI
+         */
+        if (data.status === "success") {
+          setLoading(false);
+          setMessage(
+            "Votre paiement a été confirmé avec succès."
+          );
+          setError("");
+        }
 
-            setError("");
-          }
-
-          /**
-           * =================================================
-           * PAIEMENT ÉCHOUÉ
-           * =================================================
-           */
-          if (
-            data.status ===
-            "failed"
-          ) {
-            console.log(
-              "❌ Paiement échoué."
-            );
-
-            setLoading(false);
-
-            setError(
-              "Le paiement a échoué ou a été annulé. Vous pouvez effectuer une nouvelle tentative."
-            );
-
-            setMessage("");
-          }
-
-          /**
-           * =================================================
-           * PAIEMENT TOUJOURS EN ATTENTE
-           * =================================================
-           */
-          if (
-            data.status ===
-            "pending"
-          ) {
-            setLoading(false);
-
-            setMessage(
-              "Paiement en attente. Veuillez confirmer la transaction sur votre téléphone."
-            );
-
-            setError("");
-          }
-        },
-        (snapshotError) => {
-          console.error(
-            "❌ Erreur écoute Firestore :",
-            snapshotError
+        /**
+         * PAIEMENT ÉCHOUÉ
+         */
+        if (data.status === "failed") {
+          setLoading(false);
+          setMessage("");
+          setError(
+            "Le paiement a échoué ou a été annulé. Vous pouvez effectuer une nouvelle tentative."
           );
         }
-      );
 
-    /**
-     * Nettoyage de l'écoute lorsque le composant
-     * change ou est démonté.
-     */
+        /**
+         * PAIEMENT EN ATTENTE
+         */
+        if (data.status === "pending") {
+          setLoading(false);
+          setError("");
+          setMessage(
+            "Demande envoyée. Veuillez confirmer le paiement sur votre téléphone."
+          );
+        }
+      },
+      (snapshotError) => {
+        console.error(
+          "Erreur d'écoute Firestore :",
+          snapshotError
+        );
+      }
+    );
+
     return () => {
-      console.log(
-        "🛑 Arrêt écoute paiement :",
-        paymentId
-      );
-
       unsubscribe();
     };
   }, [paymentId]);
@@ -313,250 +292,198 @@ export default function Paiement() {
   ) => {
     e.preventDefault();
 
-    /**
-     * Réinitialisation des messages.
-     */
+    if (loading) {
+      return;
+    }
+
     setError("");
     setMessage("");
 
     setReference("");
     setTransactionId("");
-
     setPaymentId("");
+
     setPaymentStatus("");
     setPaymentStatusLabel("");
 
     /**
-     * ===================================================
      * NETTOYER LE NUMÉRO
-     * ===================================================
+     *
+     * Les espaces sont supprimés.
+     * Le préfixe du numéro reste inchangé.
      */
-    let customerPhone =
-      phone
-        .replace(/\s+/g, "")
-        .trim();
+    const customerPhone = phone
+      .replace(/\s+/g, "")
+      .trim();
 
     /**
-     * Transformer :
-     *
-     * 0970000000
-     *
-     * en :
-     *
-     * 243970000000
+     * VALIDATION DE L'OPÉRATEUR
      */
-    if (
-      /^0\d{9}$/.test(
-        customerPhone
-      )
-    ) {
-      customerPhone =
-        "243" +
-        customerPhone.substring(
-          1
-        );
-    }
-
-    /**
-     * ===================================================
-     * VALIDATION NUMÉRO
-     * ===================================================
-     */
-    if (
-      !/^243\d{9}$/.test(
-        customerPhone
-      )
-    ) {
+    if (!Object.prototype.hasOwnProperty.call(
+      OPERATORS,
+      telecom
+    )) {
       setError(
-        "Numéro invalide. Exemple : 0970000000"
+        "Veuillez sélectionner un opérateur valide."
       );
-
       return;
     }
 
     /**
-     * ===================================================
-     * VALIDATION MONTANT
-     * ===================================================
+     * VALIDATION DU NUMÉRO
+     *
+     * Les formats sont identiques à ceux
+     * définis dans apiPayment.ts.
      */
-    const numericAmount =
-      Number(amount);
+    if (!validatePhone(customerPhone, telecom)) {
+      setError(OPERATORS[telecom].error);
+      return;
+    }
+
+    /**
+     * VALIDATION DU MONTANT
+     */
+    const numericAmount = Number(amount);
 
     if (
-      !Number.isFinite(
-        numericAmount
-      ) ||
+      !Number.isFinite(numericAmount) ||
       numericAmount <= 0
     ) {
       setError(
         "Veuillez saisir un montant valide."
       );
-
       return;
     }
 
     /**
-     * ===================================================
-     * VALIDATION OPÉRATEUR
-     * ===================================================
-     */
-    if (!telecom) {
-      setError(
-        "Veuillez sélectionner un opérateur."
-      );
-
-      return;
-    }
-
-    /**
-     * ===================================================
-     * LANCEMENT
-     * ===================================================
+     * LANCEMENT DE LA DEMANDE
      */
     setLoading(true);
 
     try {
       /**
-       * =================================================
-       * APPEL API
-       * =================================================
+       * APPEL À L'API NEXT.JS
+       *
+       * L'API reçoit :
+       * - phone
+       * - amount
+       * - telecom
+       * - firstname
+       * - lastname
+       * - email
        */
       const response =
         await axios.post<PaymentResponse>(
           "/api/apiPayment",
           {
-            phone:
-              customerPhone,
-
-            amount:
-              numericAmount,
-
+            phone: customerPhone,
+            amount: numericAmount,
             telecom,
-
             firstname:
-              firstname.trim() ||
-              "Client",
-
+              firstname.trim() || "Client",
             lastname:
-              lastname.trim() ||
-              "Client",
-
+              lastname.trim() || "Client",
             email:
-              email.trim() ||
-              "client@example.com",
+              email.trim() || "client@example.com",
           }
         );
 
-      const data =
-        response.data;
+      const data = response.data;
 
       console.log(
-        "📥 Réponse API paiement :",
+        "Réponse de apiPayment :",
         data
       );
 
       /**
-       * =================================================
-       * MESSAGE INITIAL
-       * =================================================
+       * RÉCUPÉRER LES INFORMATIONS RETOURNÉES
        */
+      if (data.reference) {
+        setReference(data.reference);
+      }
+
+      if (data.transactionId) {
+        setTransactionId(data.transactionId);
+      }
+
+      if (data.paymentId) {
+        setPaymentId(data.paymentId);
+      }
+
       setMessage(
         data.message ||
-          "Paiement initié. Veuillez confirmer sur votre téléphone."
+          "Demande envoyée. Veuillez confirmer le paiement sur votre téléphone."
       );
 
       /**
-       * =================================================
-       * RÉFÉRENCE
-       * =================================================
-       */
-      if (data.reference) {
-        setReference(
-          data.reference
-        );
-      }
-
-      /**
-       * =================================================
-       * TRANSACTION ID
-       * =================================================
-       */
-      if (
-        data.transactionId
-      ) {
-        setTransactionId(
-          data.transactionId
-        );
-      }
-
-      /**
-       * =================================================
-       * ID FIRESTORE
-       * =================================================
-       *
-       * Très important :
-       *
-       * On commence maintenant à écouter
-       * le document correspondant.
-       */
-      if (data.paymentId) {
-        setPaymentId(
-          data.paymentId
-        );
-      }
-
-      /**
-       * Le montant peut être vidé après
-       * le lancement de la transaction.
+       * Vider le montant après l'initialisation.
        */
       setAmount("");
 
       /**
-       * Nous ne mettons pas loading à false
-       * ici immédiatement pour l'utilisateur.
-       *
-       * L'écoute Firestore prendra le relais.
+       * Sans paymentId, le composant ne peut pas
+       * écouter le document Firestore.
        */
-    } catch (err: any) {
+      if (!data.paymentId) {
+        setLoading(false);
+      }
+    } catch (err: unknown) {
       console.error(
-        "❌ Erreur frontend paiement :",
-        err?.response?.data ||
-          err
+        "Erreur frontend paiement :",
+        err
       );
 
-      /**
-       * =================================================
-       * ERREUR 409
-       * =================================================
-       *
-       * Exemple :
-       *
-       * Une transaction est encore pending.
-       */
-      setError(
-        err?.response?.data?.error ||
-          "Une erreur de connexion est survenue. Veuillez réessayer."
-      );
+      let errorMessage =
+        "Une erreur est survenue lors de la demande de paiement.";
 
+      if (err instanceof Error) {
+  errorMessage = err.message;
+}
+
+if (
+  typeof err === "object" &&
+  err !== null &&
+  "response" in err
+) {
+  const response = (
+    err as {
+      response?: {
+        data?: ApiErrorResponse;
+      };
+    }
+  ).response;
+
+  const responseData = response?.data;
+
+  errorMessage =
+    responseData?.error ||
+    responseData?.message ||
+    errorMessage;
+
+  if (responseData?.paymentId) {
+    setPaymentId(responseData.paymentId);
+    setReference(responseData.reference || "");
+
+    setMessage(
+      "Le résultat de l'initialisation est incertain. Nous vérifions le statut de la transaction. Ne relancez pas le paiement immédiatement."
+    );
+
+    setError("");
+    setLoading(false);
+    return;
+  }
+}
+
+      setError(errorMessage);
       setMessage("");
-
-      /**
-       * Dans ce cas l'appel API est terminé.
-       */
       setLoading(false);
     }
   };
 
   /**
    * =====================================================
-   * 3. PERMETTRE UN NOUVEAU PAIEMENT
+   * 3. NOUVEAU PAIEMENT
    * =====================================================
-   *
-   * Après success ou failed, nous pouvons
-   * réinitialiser l'état de la transaction.
-   *
-   * Les informations personnelles restent dans
-   * le formulaire.
    */
   const handleNewPayment = () => {
     setMessage("");
@@ -564,42 +491,36 @@ export default function Paiement() {
 
     setReference("");
     setTransactionId("");
-
     setPaymentId("");
 
     setPaymentStatus("");
     setPaymentStatusLabel("");
 
     setAmount("");
-
     setLoading(false);
 
-    console.log(
-      "🔄 Nouvelle transaction autorisée."
-    );
+    /**
+     * Les informations personnelles et le numéro
+     * restent disponibles dans le formulaire.
+     */
   };
 
+  /**
+   * =====================================================
+   * 4. FORMULAIRE
+   * =====================================================
+   */
   return (
     <main className="payment-page">
       <div className="payment-card">
-
-        <h1>
-          Effectuer un paiement
-        </h1>
+        <h1>Effectuer un paiement</h1>
 
         <p className="subtitle">
           Paiement sécurisé par mobile money
         </p>
 
-        <form
-          onSubmit={
-            handlePayment
-          }
-        >
-
-          {/* =================================================
-              PRÉNOM
-          ================================================= */}
+        <form onSubmit={handlePayment}>
+          {/* PRÉNOM */}
           <div className="form-group">
             <label htmlFor="firstname">
               Prénom
@@ -608,21 +529,15 @@ export default function Paiement() {
             <input
               id="firstname"
               type="text"
-              value={
-                firstname
-              }
+              value={firstname}
               onChange={(e) =>
-                setFirstname(
-                  e.target.value
-                )
+                setFirstname(e.target.value)
               }
               placeholder="Votre prénom"
             />
           </div>
 
-          {/* =================================================
-              NOM
-          ================================================= */}
+          {/* NOM */}
           <div className="form-group">
             <label htmlFor="lastname">
               Nom
@@ -631,21 +546,15 @@ export default function Paiement() {
             <input
               id="lastname"
               type="text"
-              value={
-                lastname
-              }
+              value={lastname}
               onChange={(e) =>
-                setLastname(
-                  e.target.value
-                )
+                setLastname(e.target.value)
               }
               placeholder="Votre nom"
             />
           </div>
 
-          {/* =================================================
-              EMAIL
-          ================================================= */}
+          {/* EMAIL */}
           <div className="form-group">
             <label htmlFor="email">
               Email
@@ -656,17 +565,13 @@ export default function Paiement() {
               type="email"
               value={email}
               onChange={(e) =>
-                setEmail(
-                  e.target.value
-                )
+                setEmail(e.target.value)
               }
               placeholder="exemple@gmail.com"
             />
           </div>
 
-          {/* =================================================
-              OPÉRATEUR
-          ================================================= */}
+          {/* OPÉRATEUR */}
           <div className="form-group">
             <label htmlFor="telecom">
               Opérateur
@@ -674,14 +579,13 @@ export default function Paiement() {
 
             <select
               id="telecom"
-              value={
-                telecom
-              }
+              value={telecom}
               onChange={(e) =>
                 setTelecom(
-                  e.target.value
+                  e.target.value as TelecomCode
                 )
               }
+              required
             >
               <option value="MP">
                 M-Pesa
@@ -701,9 +605,7 @@ export default function Paiement() {
             </select>
           </div>
 
-          {/* =================================================
-              NUMÉRO
-          ================================================= */}
+          {/* NUMÉRO */}
           <div className="form-group">
             <label htmlFor="phone">
               Numéro de téléphone
@@ -713,32 +615,27 @@ export default function Paiement() {
               id="phone"
               type="tel"
               inputMode="numeric"
+              autoComplete="tel"
               value={phone}
               onChange={(e) =>
-                setPhone(
-                  e.target.value
-                )
+                setPhone(e.target.value)
               }
-              placeholder="0970000000"
+              placeholder={OPERATORS[telecom].placeholder}
               required
             />
 
             <small>
-              Exemple :
-              0970000000
+              {OPERATORS[telecom].help}
             </small>
           </div>
 
-          {/* =================================================
-              MONTANT
-          ================================================= */}
+          {/* MONTANT */}
           <div className="form-group">
             <label htmlFor="amount">
               Montant
             </label>
 
             <div className="amount-container">
-
               <input
                 id="amount"
                 type="number"
@@ -747,30 +644,31 @@ export default function Paiement() {
                 step="1"
                 value={amount}
                 onChange={(e) =>
-                  setAmount(
-                    e.target.value
-                  )
+                  setAmount(e.target.value)
                 }
                 placeholder="5000"
                 required
               />
 
-              <span>
-                CDF
-              </span>
-
+              <span>CDF</span>
             </div>
           </div>
 
-          {/* =================================================
-              STATUT EN TEMPS RÉEL
-          ================================================= */}
-          {paymentStatus ===
-            "pending" && (
-            <div className="message pending">
+          {/* MESSAGE GÉNÉRAL */}
+          {message &&
+            paymentStatus !== "pending" &&
+            paymentStatus !== "success" &&
+            paymentStatus !== "failed" && (
+              <div className="message pending" role="status">
+                {message}
+              </div>
+            )}
 
+          {/* EN ATTENTE */}
+          {paymentStatus === "pending" && (
+            <div className="message pending" role="status">
               <strong>
-                ⏳ Paiement en cours
+                ⏳ Paiement en attente
               </strong>
 
               <p>
@@ -778,21 +676,18 @@ export default function Paiement() {
                   "Veuillez confirmer la transaction sur votre téléphone."}
               </p>
 
-              <p>
-                Nous attendons la confirmation de
-                l'opérateur.
-              </p>
-
+              {reference && (
+                <p>
+                  <strong>Référence :</strong>{" "}
+                  {reference}
+                </p>
+              )}
             </div>
           )}
 
-          {/* =================================================
-              SUCCÈS
-          ================================================= */}
-          {paymentStatus ===
-            "success" && (
-            <div className="message success">
-
+          {/* SUCCÈS */}
+          {paymentStatus === "success" && (
+            <div className="message success" role="status">
               <strong>
                 ✅ Paiement réussi
               </strong>
@@ -803,18 +698,14 @@ export default function Paiement() {
 
               {reference && (
                 <p>
-                  <strong>
-                    Référence :
-                  </strong>{" "}
+                  <strong>Référence :</strong>{" "}
                   {reference}
                 </p>
               )}
 
               {transactionId && (
                 <p>
-                  <strong>
-                    Transaction :
-                  </strong>{" "}
+                  <strong>Transaction :</strong>{" "}
                   {transactionId}
                 </p>
               )}
@@ -822,23 +713,16 @@ export default function Paiement() {
               <button
                 type="button"
                 className="new-payment-button"
-                onClick={
-                  handleNewPayment
-                }
+                onClick={handleNewPayment}
               >
                 Effectuer un autre paiement
               </button>
-
             </div>
           )}
 
-          {/* =================================================
-              ÉCHEC
-          ================================================= */}
-          {paymentStatus ===
-            "failed" && (
-            <div className="message error">
-
+          {/* ÉCHEC */}
+          {paymentStatus === "failed" && (
+            <div className="message error" role="alert">
               <strong>
                 ❌ Paiement échoué
               </strong>
@@ -849,9 +733,7 @@ export default function Paiement() {
 
               {reference && (
                 <p>
-                  <strong>
-                    Référence :
-                  </strong>{" "}
+                  <strong>Référence :</strong>{" "}
                   {reference}
                 </p>
               )}
@@ -859,254 +741,35 @@ export default function Paiement() {
               <button
                 type="button"
                 className="retry-button"
-                onClick={
-                  handleNewPayment
-                }
+                onClick={handleNewPayment}
               >
                 Réessayer
               </button>
-
             </div>
           )}
 
-          {/* =================================================
-              ERREUR API
-          ================================================= */}
-          {error &&
-            paymentStatus !==
-              "failed" && (
-              <div className="message error">
-                {error}
-              </div>
+          {/* ERREUR */}
+          {error && (
+            <div className="message error" role="alert">
+              {error}
+            </div>
+          )}
+
+          {/* BOUTON DE PAIEMENT */}
+          {paymentStatus !== "success" &&
+            paymentStatus !== "failed" && (
+              <button
+                type="submit"
+                className="payment-button"
+                disabled={loading}
+              >
+                {loading
+                  ? "Traitement en cours..."
+                  : "Payer maintenant"}
+              </button>
             )}
-
-          {/* =================================================
-              MESSAGE INITIAL
-          ================================================= */}
-          {message &&
-            !paymentStatus && (
-              <div className="message success">
-
-                <strong>
-                  Paiement initié
-                </strong>
-
-                <p>
-                  {message}
-                </p>
-
-                {reference && (
-                  <p>
-                    <strong>
-                      Référence :
-                    </strong>{" "}
-                    {reference}
-                  </p>
-                )}
-
-                {transactionId && (
-                  <p>
-                    <strong>
-                      Transaction :
-                    </strong>{" "}
-                    {transactionId}
-                  </p>
-                )}
-
-                <p>
-                  Veuillez confirmer la transaction
-                  sur votre téléphone.
-                </p>
-
-              </div>
-          )}
-
-          {/* =================================================
-              BOUTON PAYER
-          ================================================= */}
-          {paymentStatus !==
-            "success" &&
-            paymentStatus !==
-              "failed" && (
-            <button
-              type="submit"
-              disabled={loading}
-            >
-              {loading
-                ? "Traitement..."
-                : "Payer maintenant"}
-            </button>
-          )}
-
         </form>
       </div>
-
-      <style jsx>{`
-        .payment-page {
-          min-height: 100vh;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          padding: 20px;
-          background: #f4f6f8;
-          box-sizing: border-box;
-        }
-
-        .payment-card {
-          width: 100%;
-          max-width: 450px;
-          background: #ffffff;
-          padding: 30px;
-          border-radius: 14px;
-          box-shadow:
-            0 5px 25px rgba(0, 0, 0, 0.08);
-          box-sizing: border-box;
-        }
-
-        h1 {
-          margin: 0;
-          text-align: center;
-          font-size: 28px;
-          color: #222;
-        }
-
-        .subtitle {
-          margin: 8px 0 25px;
-          text-align: center;
-          color: #777;
-          font-size: 14px;
-        }
-
-        .form-group {
-          margin-bottom: 18px;
-        }
-
-        label {
-          display: block;
-          margin-bottom: 7px;
-          font-size: 15px;
-          font-weight: 600;
-          color: #333;
-        }
-
-        input,
-        select {
-          width: 100%;
-          height: 46px;
-          padding: 0 12px;
-          border: 1px solid #d5d5d5;
-          border-radius: 7px;
-          background: #fff;
-          font-size: 16px;
-          box-sizing: border-box;
-          outline: none;
-        }
-
-        input:focus,
-        select:focus {
-          border-color: #007bff;
-        }
-
-        small {
-          display: block;
-          margin-top: 5px;
-          color: #777;
-          font-size: 12px;
-        }
-
-        .amount-container {
-          position: relative;
-        }
-
-        .amount-container input {
-          padding-right: 55px;
-        }
-
-        .amount-container span {
-          position: absolute;
-          right: 14px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: #666;
-          font-weight: 600;
-          font-size: 14px;
-        }
-
-        button {
-          width: 100%;
-          height: 48px;
-          margin-top: 5px;
-          border: none;
-          border-radius: 7px;
-          background: #007bff;
-          color: white;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-        }
-
-        button:hover:not(:disabled) {
-          opacity: 0.9;
-        }
-
-        button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .message {
-          margin-bottom: 18px;
-          padding: 14px;
-          border-radius: 7px;
-          font-size: 14px;
-        }
-
-        .message p {
-          margin: 6px 0;
-        }
-
-        .success {
-          background: #e8f8ed;
-          color: #176b2c;
-          border: 1px solid #bce8c7;
-        }
-
-        .pending {
-          background: #fff8e1;
-          color: #765800;
-          border: 1px solid #f0d98a;
-        }
-
-        .error {
-          background: #ffe8e8;
-          color: #b00020;
-          border: 1px solid #ffcaca;
-        }
-
-        .new-payment-button {
-          margin-top: 14px;
-          background: #16803c;
-        }
-
-        .retry-button {
-          margin-top: 14px;
-          background: #007bff;
-        }
-
-        @media (max-width: 500px) {
-          .payment-page {
-            padding: 10px;
-          }
-
-          .payment-card {
-            padding: 22px;
-          }
-
-          h1 {
-            font-size: 24px;
-          }
-        }
-      `}</style>
     </main>
   );
 }
