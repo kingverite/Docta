@@ -1,82 +1,78 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import crypto from "crypto";
+import type {
+  NextApiRequest,
+  NextApiResponse,
+} from "next";
+
 import axios from "axios";
+import crypto from "crypto";
+import { db } from "@/lib/firebaseAdmin";
 
-import { db } from "@/lib/firebase";
-import {
-  addDoc,
-  collection,
-  serverTimestamp,
-} from "firebase/firestore";
+// =========================================
+// TYPES
+// =========================================
 
-type CardPaymentRequest = {
+interface CardPaymentRequest {
   amount: number;
-  currency: "USD";
-
   firstname: string;
   lastname: string;
   email: string;
   phone: string;
-
   address: string;
   city: string;
   country: string;
-
-  state?: string;
-  postalCode?: string;
-};
-
-type ApiResponse = {
-  success: boolean;
-  message?: string;
-  error?: string;
-
-  paymentId?: string;
-  reference?: string;
-  transactionUuid?: string;
-  paymentUrl?: string;
-
-  
-};
-
-type ProviderData = Record<string, unknown>;
-
-function generateReference(): string {
-  return `CARD_${Date.now()}_${crypto
-    .randomBytes(4)
-    .toString("hex")}`;
 }
 
-function isRecord(value: unknown): value is ProviderData {
+interface CardPaymentResponse {
+  success: boolean;
+  error?: string;
+  reference?: string;
+  checkoutUrl?: string;
+}
+
+interface FreshPayCardResponse {
+  status?: string;
+  data?: {
+    links?: string;
+    transaction_uuid?: string;
+  };
+}
+
+interface AxiosLikeError {
+  isAxiosError: true;
+  response?: {
+    status?: number;
+  };
+  code?: string;
+}
+
+// Vérification Axios compatible avec unknown
+function isAxiosLikeError(
+  error: unknown
+): error is AxiosLikeError {
+  if (
+    typeof error !== "object" ||
+    error === null
+  ) {
+    return false;
+  }
+
   return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value)
+    "isAxiosError" in error &&
+    (error as { isAxiosError?: unknown })
+      .isAxiosError === true
   );
 }
 
-function getString(
-  object: ProviderData,
-  key: string
-): string | undefined {
-  const value = object[key];
-
-  return typeof value === "string"
-    ? value
-    : undefined;
-}
+// =========================================
+// API HANDLER
+// =========================================
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ApiResponse>
+  res: NextApiResponse<CardPaymentResponse>
 ) {
-
-  // --------------------------///////////////////////////////////------------------------
-  // 1. Vérifier la méthode HTTP
-  // --------------------------------------------------
-
   if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
+    res.setHeader("Allow", ["POST"]);
 
     return res.status(405).json({
       success: false,
@@ -85,13 +81,8 @@ export default async function handler(
   }
 
   try {
-    // --------------------------------------------------
-    // 2. Lire les données du client
-    // --------------------------------------------------
-
     const {
       amount,
-      currency,
       firstname,
       lastname,
       email,
@@ -99,19 +90,20 @@ export default async function handler(
       address,
       city,
       country,
-      state,
-      postalCode,
     } = req.body as CardPaymentRequest;
 
-    // --------------------------------------------------
-    // 3. Valider le montant et la devise
-    // --------------------------------------------------
+    // =========================================
+    // 1. VALIDATION DU MONTANT
+    // =========================================
 
     const numericAmount = Number(amount);
 
     if (
       !Number.isFinite(numericAmount) ||
-      numericAmount < 1
+      numericAmount < 1 ||
+      !Number.isSafeInteger(
+        Math.round(numericAmount * 100)
+      )
     ) {
       return res.status(400).json({
         success: false,
@@ -119,19 +111,11 @@ export default async function handler(
       });
     }
 
-    if (currency !== "USD") {
-      return res.status(400).json({
-        success: false,
-        error:
-          "Le paiement par carte est disponible uniquement en USD.",
-      });
-    }
+    // =========================================
+    // 2. VALIDATION DES INFORMATIONS CLIENT
+    // =========================================
 
-    // --------------------------------------------------
-    // 4. Vérifier les informations obligatoires
-    // --------------------------------------------------
-
-    const requiredFields: Record<string, unknown> = {
+    const fields = {
       firstname,
       lastname,
       email,
@@ -141,323 +125,320 @@ export default async function handler(
       country,
     };
 
-    const missingFields = Object.entries(requiredFields)
-      .filter(
-        ([, value]) =>
-          typeof value !== "string" ||
-          value.trim() === ""
-      )
-      .map(([key]) => key);
+    for (const [key, value] of Object.entries(fields)) {
+      if (
+        typeof value !== "string" ||
+        !value.trim()
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: `Le champ ${key} est obligatoire.`,
+        });
+      }
+    }
 
-    if (missingFields.length > 0) {
+    const cleanFirstname = firstname.trim();
+    const cleanLastname = lastname.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = phone.trim();
+    const cleanAddress = address.trim();
+    const cleanCity = city.trim();
+    const cleanCountry = country.trim().toUpperCase();
+
+    if (
+      !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)
+    ) {
       return res.status(400).json({
         success: false,
-        error:
-          "Certaines informations obligatoires sont manquantes.",
+        error: "Adresse e-mail invalide.",
       });
     }
 
-    const normalizedCountry = country.trim().toUpperCase();
-
-    if (!/^[A-Z]{2}$/.test(normalizedCountry)) {
+    if (
+      !/^[\d+][\d\s\-()]{4,19}$/.test(cleanPhone)
+    ) {
       return res.status(400).json({
         success: false,
-        error:
-          "Le pays doit être indiqué avec un code ISO à deux lettres, par exemple CD pour la RDC.",
+        error: "Numéro de téléphone invalide.",
       });
     }
 
-    // --------------------------------------------------
-    // 5. Vérifier les variables d'environnement Vercel
-    // --------------------------------------------------
+    if (!/^[A-Z]{2}$/.test(cleanCountry)) {
+      return res.status(400).json({
+        success: false,
+        error: "Code pays invalide. Utilisez deux lettres ISO.",
+      });
+    }
 
-    const digitalOceanApiUrl =
+    if (["US", "CA"].includes(cleanCountry)) {
+      return res.status(400).json({
+        success: false,
+        error:
+          "Ce formulaire nécessite des champs supplémentaires pour les paiements depuis les États-Unis ou le Canada.",
+      });
+    }
+
+    // =========================================
+    // 3. CONFIGURATION SERVEUR
+    // =========================================
+
+    const SITE_URL = process.env.SITE_URL;
+
+    // Utilisation de la variable déjà configurée
+    const DIGITALOCEAN_API_URL =
       process.env.DIGITALOCEAN_API_URL;
 
-    const internalApiSecret =
+    const INTERNAL_API_SECRET =
       process.env.INTERNAL_API_SECRET;
 
-      console.log("Vérification de la configuration :", {
-  digitalOceanUrlConfiguree: Boolean(digitalOceanApiUrl),
-  internalSecretConfigure: Boolean(internalApiSecret),
-  urlExemple:
-    digitalOceanApiUrl?.includes("example.com") ?? false,
-});
-
-    if (!digitalOceanApiUrl || !internalApiSecret) {
+    if (
+      !SITE_URL ||
+      !DIGITALOCEAN_API_URL ||
+      !INTERNAL_API_SECRET
+    ) {
       console.error(
-        "Configuration DigitalOcean manquante."
+        "Configuration Card Payment incomplète."
       );
 
       return res.status(500).json({
         success: false,
-        error:
-          "La configuration du serveur de paiement est incomplète.",
+        error: "Configuration du paiement indisponible.",
       });
     }
 
-    let baseUrl: URL;
+    const siteUrl = SITE_URL.replace(/\/+$/, "");
+
+    const serverUrl =
+      DIGITALOCEAN_API_URL.replace(/\/+$/, "");
+
+    if (
+      !siteUrl.startsWith("https://") ||
+      !serverUrl.startsWith("https://")
+    ) {
+      return res.status(500).json({
+        success: false,
+        error: "Les serveurs doivent utiliser HTTPS.",
+      });
+    }
+
+    // =========================================
+    // 4. CRÉATION DE LA RÉFÉRENCE
+    // =========================================
+
+    const reference = `CARD_${crypto.randomUUID()}`;
+
+    const paymentRef = db
+      .collection("paiements")
+      .doc();
+
+    // =========================================
+    // 5. ENREGISTREMENT FIRESTORE
+    // =========================================
+
+    await paymentRef.set({
+      reference,
+
+      amount: Number(numericAmount.toFixed(2)),
+      currency: "USD",
+
+      paymentMethod: "card",
+      method: "card",
+
+      status: "pending",
+      Trans_Status: "Pending",
+
+      firstname: cleanFirstname,
+      lastname: cleanLastname,
+      email: cleanEmail,
+      phone: cleanPhone,
+
+      address: cleanAddress,
+      city: cleanCity,
+      country: cleanCountry,
+
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    // =========================================
+    // 6. URLS DE RETOUR ET WEBHOOK
+    // =========================================
+
+    const callbackUrl =
+      `${siteUrl}/api/gofreshpay/webhook`;
+
+    const returnUrl =
+      `${siteUrl}/paiement/carte/retour`;
+
+    const cancelUrl =
+      `${siteUrl}/paiement/carte/annule`;
+
+    // =========================================
+    // 7. CONSTRUCTION DE LA REQUÊTE FRESHPAY
+    // =========================================
+
+    const payload = {
+      amount: Number(numericAmount.toFixed(2)),
+      currency: "USD",
+
+      merchant_reference: reference,
+
+      callback_url: callbackUrl,
+
+      bill_to_forename: cleanFirstname,
+      bill_to_surname: cleanLastname,
+      bill_to_email: cleanEmail,
+      bill_to_phone: cleanPhone,
+
+      bill_to_address_line1: cleanAddress,
+      bill_to_address_city: cleanCity,
+      bill_to_address_country: cleanCountry,
+
+      return_url: returnUrl,
+      cancel_url: cancelUrl,
+    };
+
+    // =========================================
+    // 8. COMMUNICATION DIGITALOCEAN
+    // =========================================
 
     try {
-      baseUrl = new URL(digitalOceanApiUrl);
-    } catch {
-      return res.status(500).json({
-        success: false,
-        error:
-          "L'adresse du serveur de paiement est invalide.",
-      });
-    }
-
-    if (
-      baseUrl.protocol !== "https:" ||
-      baseUrl.hostname === "example.com" ||
-      baseUrl.hostname.endsWith(".example.com")
-    ) {
-      console.error(
-        "L'adresse du serveur de paiement n'est pas correctement configurée."
-      );
-
-      return res.status(500).json({
-        success: false,
-        error:
-          "L'adresse HTTPS du serveur de paiement doit être configurée dans Vercel.",
-      });
-    }
-
-    // --------------------------------------------------
-    // 6. Générer une référence unique
-    // --------------------------------------------------
-
-    const merchantReference = generateReference();
-
-    // --------------------------------------------------
-    // 7. Préparer la requête destinée à DigitalOcean
-    // --------------------------------------------------
-
-    const paymentPayload: Record<string, unknown> = {
-      amount: Number(numericAmount.toFixed(2)),
-
-      merchant_reference: merchantReference,
-
-      bill_to_forename: firstname.trim(),
-      bill_to_surname: lastname.trim(),
-      bill_to_email: email.trim(),
-      bill_to_phone: phone.trim(),
-
-      bill_to_address_line1: address.trim(),
-      bill_to_address_city: city.trim(),
-      bill_to_address_country: normalizedCountry,
-
-      callback_url: process.env.MOKO_CALLBACK_URL,
-      return_url: process.env.MOKO_RETURN_URL,
-      cancel_url: process.env.MOKO_CANCEL_URL,
-    };
-
-    if (state?.trim()) {
-      paymentPayload.bill_to_address_state =
-        state.trim();
-    }
-
-    if (postalCode?.trim()) {
-      paymentPayload.bill_to_address_postal_code =
-        postalCode.trim();
-    }
-
-    // --------------------------------------------------
-    // 8. Appeler le serveur Express par HTTPS
-    // --------------------------------------------------
-
-    const endpoint = new URL(
-      "/api/cybersource/payment",
-      baseUrl
-    ).toString();
-
-    const response = await axios.post<unknown>(
-      endpoint,
-      paymentPayload,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "X-Internal-Secret": internalApiSecret,
-        },
-
-        timeout: 30000,
-
-        validateStatus: () => true,
-      }
-    );
-
-    // --------------------------------------------------
-    // 9. Interpréter la réponse du prestataire
-    // --------------------------------------------------
-
-    if (response.status < 200 || response.status >= 300) {
-      const providerError: unknown = response.data;
-
-      let errorMessage =
-        "Impossible d'initialiser le paiement par carte.";
-
-      if (isRecord(providerError)) {
-        errorMessage =
-          getString(providerError, "error") ||
-          getString(providerError, "message") ||
-          getString(providerError, "detail") ||
-          errorMessage;
-      }
-
-      console.error(
-        "Échec de l'initialisation du paiement :",
+      const response = await axios.post(
+        `${serverUrl}/api/cybersource/payment`,
+        payload,
         {
-          httpStatus: response.status,
-          reference: merchantReference,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Internal-Secret": INTERNAL_API_SECRET,
+          },
+
+          timeout: 35000,
         }
       );
 
-      return res.status(502).json({
-        success: false,
-        error: errorMessage,
-      });
-    }
+      // Typage explicite de la réponse FreshPay
+      const providerResponse =
+        response.data as FreshPayCardResponse;
 
-    const providerData: ProviderData =
-      isRecord(response.data)
-        ? response.data
-        : {};
+      if (
+        providerResponse?.status !== "success" ||
+        typeof providerResponse?.data?.links !== "string" ||
+        typeof providerResponse?.data?.transaction_uuid !== "string"
+      ) {
+        console.error(
+          "Réponse FreshPay non conforme :",
+          {
+            status: providerResponse?.status,
+          }
+        );
 
-    const providerStatus = String(
-      providerData.status ?? ""
-    ).toLowerCase();
+        return res.status(502).json({
+          success: false,
+          error:
+            "FreshPay n'a pas retourné un lien de paiement valide.",
+          reference,
+        });
+      }
 
-    const paymentData: ProviderData =
-      isRecord(providerData.data)
-        ? providerData.data
-        : {};
+      const checkoutUrl =
+        providerResponse.data.links;
 
-    const paymentUrl = getString(
-      paymentData,
-      "links"
-    );
+      const transactionId =
+        providerResponse.data.transaction_uuid;
 
-    const transactionUuid =
-      getString(paymentData, "transaction_uuid") ||
-      getString(paymentData, "transaction_id") ||
-      getString(paymentData, "id");
+      // =========================================
+      // 8.1 VALIDATION URL CHECKOUT
+      // =========================================
 
-    if (
-      providerStatus !== "success" ||
-      !paymentUrl ||
-      !/^https:\/\//i.test(paymentUrl)
-    ) {
-      console.error(
-        "Réponse du prestataire inattendue :",
-        {
-          httpStatus: response.status,
-          providerStatus,
-          reference: merchantReference,
-          hasPaymentUrl: Boolean(paymentUrl),
-        }
-      );
+      let parsedCheckoutUrl: URL;
 
-      return res.status(502).json({
-        success: false,
-        error:
-          "Le prestataire n'a pas retourné de lien de paiement valide.",
-      });
-    }
+      try {
+        parsedCheckoutUrl = new URL(checkoutUrl);
+      } catch {
+        return res.status(502).json({
+          success: false,
+          error: "URL de paiement non valide.",
+          reference,
+        });
+      }
 
-    // --------------------------------------------------
-    // 10. Enregistrer le paiement dans Firestore
-    // --------------------------------------------------
+      if (
+        parsedCheckoutUrl.protocol !== "https:" ||
+        parsedCheckoutUrl.hostname !==
+          "uc.card.gofreshpay.com"
+      ) {
+        console.error(
+          "URL de checkout FreshPay invalide."
+        );
 
-    const paymentDoc = await addDoc(
-      collection(db, "paiements"),
-      {
-        type: "card",
+        return res.status(502).json({
+          success: false,
+          error: "URL de paiement non valide.",
+          reference,
+        });
+      }
 
-        provider: "MokoAfrika",
+      // =========================================
+      // 9. MISE À JOUR FIRESTORE
+      // =========================================
 
-        reference: merchantReference,
-
-        transactionUuid: transactionUuid || null,
-
-        amount: numericAmount,
-        currency: "USD",
+      await paymentRef.update({
+        transactionId,
+        checkoutUrl,
 
         status: "pending",
+        Trans_Status: "Pending",
 
-        statusLabel:
-          "Paiement par carte en attente",
+        updatedAt: new Date(),
+      });
 
-        firstname: firstname.trim(),
-        lastname: lastname.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
+      // =========================================
+      // 10. RÉPONSE AU FRONTEND
+      // =========================================
 
-        address: address.trim(),
-        city: city.trim(),
-        country: normalizedCountry,
+      return res.status(200).json({
+        success: true,
+        reference,
+        checkoutUrl,
+      });
 
-        state: state?.trim() || "",
-        postalCode: postalCode?.trim() || "",
+    } catch (error: unknown) {
+      console.error(
+        "Erreur communication DigitalOcean :",
+        isAxiosLikeError(error)
+          ? {
+              status: error.response?.status,
+              code: error.code,
+            }
+          : error instanceof Error
+            ? error.message
+            : "Erreur inconnue"
+      );
 
-        transactionStatus:
-          getString(
-            paymentData,
-            "transaction_status"
-          ) || "PENDING",
+      // Le paiement reste pending.
+      // Une erreur réseau ne prouve pas
+      // que FreshPay n'a pas créé la transaction.
 
-        paymentUrl,
+      return res.status(502).json({
+        success: false,
+        error:
+          "La demande n'a pas pu être confirmée. Vérifiez son état avant de réessayer.",
+        reference,
+      });
+    }
 
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      }
-    );
-
-    // --------------------------------------------------
-    // 11. Répondre au frontend
-    // --------------------------------------------------
-
-    return res.status(200).json({
-      success: true,
-
-      message:
-        "Paiement initialisé avec succès.",
-
-      paymentId: paymentDoc.id,
-
-      reference: merchantReference,
-
-      transactionUuid,
-
-      paymentUrl,
-    });
   } catch (error: unknown) {
-  let errorMessage =
-    "Une erreur est survenue lors de l'initialisation du paiement.";
-
-  if (error instanceof Error) {
-    const axiosError = error as Error & {
-      response?: {
-        status?: number;
-        data?: unknown;
-      };
-      code?: string;
-    };
-
-    console.error("Erreur cardPaiement :", {
-      message: axiosError.message,
-      status: axiosError.response?.status,
-      code: axiosError.code,
-    });
-  } else {
     console.error(
-      "Erreur cardPaiement inconnue."
+      "CardPaiement API error:",
+      error instanceof Error
+        ? error.message
+        : "Erreur inconnue"
     );
-  }
 
-  return res.status(502).json({
-    success: false,
-    error: errorMessage,
-  });
-}
+    return res.status(500).json({
+      success: false,
+      error:
+        "Erreur interne lors de la préparation du paiement.",
+    });
+  }
 }
